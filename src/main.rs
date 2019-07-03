@@ -18,26 +18,24 @@ fn main() {
         println!("[INFO] loading program: {}", rom_file);
 
         let mut file = File::open(&Path::new(&rom_file)).expect("Could not open file");
-        let mut romContent = Vec::<u8>::new();
-        file.read_to_end(&mut romContent).expect("Unable to read the file");
+        let mut rom_content = Vec::<u8>::new();
+        file.read_to_end(&mut rom_content).expect("Unable to read the file");
 
-        println!("[INFO] program loaded: {:x?}", romContent);
+        println!("[INFO] program loaded");
 
-        chip8::load_program(&mut state, romContent);
+        chip8::load_program(&mut state, rom_content);
     }
 
     println!("[DEBUG] state memory: {:x?}", &state.memory[..]);
 
     let config = chip8::EmuConfig {
-        debugMode: true,
+        debug_mode: true,
         palette: chip8::Palette {
             primary: chip8::Color { r: 1.0, g: 1.0, b: 1.0 },
             secondary: chip8::Color { r: 0.14, g: 0.14, b: 0.14 }
         },
-        screenScale: 8
+        screen_scale: 8
     };
 
     //sdl2::execute_main_loop(state, config);
-
-    chip8::destroyCPUState(state);
 }

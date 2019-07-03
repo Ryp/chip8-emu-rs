@@ -36,7 +36,7 @@ pub fn execute_step(config: &EmuConfig, state: &mut cpu::CPUState, deltaTimeMs: 
 
     update_timers(state, &mut instructionsToExecute, deltaTimeMs);
 
-    for i in 0..instructionsToExecute
+    for _i in 0..instructionsToExecute
     {
         // Simulate logic
         let nextInstruction: u16 = load_next_instruction(state);
@@ -67,7 +67,7 @@ fn update_timers(state: &mut cpu::CPUState, executionCounter: &mut u32, deltaTim
     }
 }
 
-fn execute_instruction(config: &EmuConfig, state: &mut cpu::CPUState, instruction: u16)
+pub fn execute_instruction(config: &EmuConfig, state: &mut cpu::CPUState, instruction: u16)
 {
     // Save PC for later
     let pcSave = state.pc;
@@ -309,5 +309,5 @@ fn execute_instruction(config: &EmuConfig, state: &mut cpu::CPUState, instructio
     }
 
     // Save previous key state
-    state.keyStatePrev = state.keyState;
+    state.key_state_prev = state.key_state;
 }

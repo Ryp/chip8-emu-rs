@@ -1,3 +1,4 @@
+#[derive(Default)]
 pub struct Color
 {
     pub r: f32,
@@ -5,15 +6,17 @@ pub struct Color
     pub b: f32,
 }
 
+#[derive(Default)]
 pub struct Palette
 {
     pub primary: Color,
     pub secondary: Color,
 }
 
+#[derive(Default)]
 pub struct EmuConfig
 {
-    pub debugMode: bool,
+    pub debug_mode: bool,
     pub palette: Palette,
-    pub screenScale: u32,
+    pub screen_scale: u32,
 }

@@ -1,15 +1,15 @@
-const VRegisterCount: usize = 16;
-const StackSize: usize = 16;
-const MemorySizeInBytes: usize = 0x1000;
+pub const VRegisterCount: usize = 16;
+pub const StackSize: usize = 16;
+pub const MemorySizeInBytes: usize = 0x1000;
 
 // Fonts
 const FontTableGlyphCount: usize = 16;
 const GlyphSizeInBytes: usize = 5;
 
 // Display
-const ScreenWidth: usize = 64;
-const ScreenHeight: usize = 32;
-const ScreenLineSizeInBytes: usize = ScreenWidth / 8;
+pub const ScreenWidth: usize = 64;
+pub const ScreenHeight: usize = 32;
+pub const ScreenLineSizeInBytes: usize = ScreenWidth / 8;
 
 // Memory
 pub const MinProgramAddress: usize = 0x0200;
@@ -45,15 +45,15 @@ pub struct CPUState
     pub delayTimerAccumulator: u32,
     pub executionTimerAccumulator: u32,
 
-    pub memory: Vec<u8>, // MemorySizeInBytes
+    pub memory: Vec<u8>,
 
-    pub keyState: u16,
+    pub key_state: u16,
 
-    pub keyStatePrev: u16,
+    pub key_state_prev: u16,
     pub isWaitingForKey: bool,
 
-    fontTableOffsets: [u16; FontTableGlyphCount],
-    pub screen: [[u8; ScreenHeight]; ScreenLineSizeInBytes],
+    pub fontTableOffsets: [u16; FontTableGlyphCount],
+    pub screen: Vec<Vec<u8>>,
 }
 
 const FontTableOffsetInBytes: usize = 0x0000;
@@ -101,14 +101,14 @@ pub fn createCPUState() -> CPUState
 
     // Set PC to first address
     state.pc = MinProgramAddress as u16;
+
+    // Clear memory
     state.memory = vec![0; MemorySizeInBytes];
+
+    // Clear screen
+    state.screen = vec![vec![0; ScreenLineSizeInBytes]; ScreenHeight];
 
     load_font_table(&mut state);
 
     state
-}
-
-pub fn destroyCPUState(state: CPUState)
-{
-    // TODO
 }
