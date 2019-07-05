@@ -25,7 +25,7 @@ pub fn load_next_instruction(state: &cpu::CPUState) -> u16
     let byte1 = state.memory[pc + 1] as u32;
 
     // Load big endian
-    let instruction = byte0 | byte1 << 8;
+    let instruction = byte0 << 8 | byte1;
 
     instruction as u16
 }

@@ -8,7 +8,7 @@ mod sdl2;
 
 fn main() {
     let args: Vec<_> = env::args().collect();
-    assert_eq!(args.len(), 2, "Error: expecting 2 arguments here");
+    assert_eq!(args.len(), 2);
 
     let mut state: chip8::CPUState = chip8::createCPUState();
 
@@ -37,5 +37,5 @@ fn main() {
         screen_scale: 8
     };
 
-    //sdl2::execute_main_loop(state, config);
+    sdl2::execute_main_loop(&mut state, &config);
 }
