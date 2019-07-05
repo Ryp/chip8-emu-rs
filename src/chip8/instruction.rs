@@ -11,7 +11,7 @@ use rand::prelude::*;
 // Clear the display.
 pub fn execute_cls(state: &mut CPUState)
 {
-    state.screen = vec![vec![0; cpu::ScreenLineSizeInBytes]; cpu::ScreenHeight];
+    state.screen = vec![vec![0; cpu::SCREEN_LINE_SIZE_IN_BYTES]; cpu::SCREEN_HEIGHT];
 }
 
 // Return from a subroutine.
@@ -346,7 +346,7 @@ pub fn execute_drw(state: &mut CPUState, registerLHS: u8, registerRHS: u8, size:
 {
     assert!((registerLHS & !0x0F) == 0); // Invalid register
     assert!((registerRHS & !0x0F) == 0); // Invalid register
-    assert!(memory::is_valid_memory_range(state.i, size as u16, MemoryUsage::Read));
+    assert!(memory::is_valid_memory_range(state.i, size as usize, MemoryUsage::Read));
 
     let registerLHS = registerLHS as usize;
     let registerRHS = registerRHS as usize;
@@ -361,12 +361,12 @@ pub fn execute_drw(state: &mut CPUState, registerLHS: u8, registerRHS: u8, size:
     {
         let spriteAddress = (state.i + rowIndex as u16) as usize;
         let spriteRow: u8 = state.memory[spriteAddress];
-        let screenY = (spriteStartY + rowIndex as usize) % cpu::ScreenHeight;
+        let screenY = (spriteStartY + rowIndex as usize) % cpu::SCREEN_HEIGHT;
 
         for pixelIndex in 0..8
         {
             let spritePixelValue: u8 = (spriteRow >> (7 - pixelIndex)) & 0x1;
-            let screenX: usize = (spriteStartX + pixelIndex) % cpu::ScreenWidth;
+            let screenX: usize = (spriteStartX + pixelIndex) % cpu::SCREEN_WIDTH;
 
             let screenPixelValue: u8 = display::read_screen_pixel(state, screenX, screenY);
 
@@ -512,13 +512,12 @@ pub fn execute_ldb(state: &mut CPUState, registerName: u8)
 // starting at the address in I.
 pub fn execute_ldai(state: &mut CPUState, registerName: u8)
 {
-    let registerIndexMax = registerName as u16;
+    let registerIndexMax = registerName as usize;
 
     assert!((registerIndexMax & !0x0F) == 0); // Invalid register
     assert!(memory::is_valid_memory_range(state.i, registerIndexMax + 1, MemoryUsage::Write));
 
-    for i in 0..registerIndexMax+1 {
-        let index = i as usize;
+    for index in 0..registerIndexMax+1 {
         state.memory[state.i as usize + index] = state.vRegisters[index];
     }
 }
@@ -527,13 +526,12 @@ pub fn execute_ldai(state: &mut CPUState, registerName: u8)
 // The interpreter reads values from memory starting at location I into registers V0 through Vx.
 pub fn execute_ldm(state: &mut CPUState, registerName: u8)
 {
-    let registerIndexMax = registerName as u16;
+    let registerIndexMax = registerName as usize;
 
     assert!((registerIndexMax & !0x0F) == 0); // Invalid register
     assert!(memory::is_valid_memory_range(state.i, registerIndexMax + 1, MemoryUsage::Read));
 
-    for i in 0..registerIndexMax+1 {
-        let index = i as usize;
+    for index in 0..registerIndexMax+1 {
         state.vRegisters[index] = state.memory[state.i as usize + index];
     }
 }
@@ -549,12 +547,12 @@ mod tests {
         {
             let mut state = cpu::createCPUState();
             state.screen[0][0] = 0b11001100;
-            state.screen[cpu::ScreenHeight - 1][cpu::ScreenLineSizeInBytes - 1] = 0b10101010;
+            state.screen[cpu::SCREEN_HEIGHT - 1][cpu::SCREEN_LINE_SIZE_IN_BYTES - 1] = 0b10101010;
 
             execution::execute_instruction(&mut state, 0x00E0);
 
             assert_eq!(state.screen[0][0], 0x00);
-            assert_eq!(state.screen[cpu::ScreenHeight - 1][cpu::ScreenLineSizeInBytes - 1], 0x00);
+            assert_eq!(state.screen[cpu::SCREEN_HEIGHT - 1][cpu::SCREEN_LINE_SIZE_IN_BYTES - 1], 0x00);
         }
 
         //SUBCASE("JP")
@@ -590,7 +588,7 @@ mod tests {
             execution::execute_instruction(&mut state, 0x00EE);
 
             assert_eq!(state.sp, 0);
-            assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 2);
+            assert_eq!(state.pc, cpu::MIN_PROGRAM_ADDRESS as u16 + 2);
         }
 
         //SUBCASE("SE")
@@ -599,7 +597,7 @@ mod tests {
             execution::execute_instruction(&mut state, 0x3000);
 
             assert_eq!(state.vRegisters[V0 as usize], 0);
-            assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 4);
+            assert_eq!(state.pc, cpu::MIN_PROGRAM_ADDRESS as u16 + 4);
         }
 
         //SUBCASE("SNE")
@@ -608,7 +606,7 @@ mod tests {
             execution::execute_instruction(&mut state, 0x40FF);
 
             assert_eq!(state.vRegisters[V0 as usize], 0);
-            assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 4);
+            assert_eq!(state.pc, cpu::MIN_PROGRAM_ADDRESS as u16 + 4);
         }
 
         //SUBCASE("SE2")
@@ -618,7 +616,7 @@ mod tests {
 
             assert_eq!(state.vRegisters[V0 as usize], 0);
             assert_eq!(state.vRegisters[V1 as usize], 0);
-            assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 4);
+            assert_eq!(state.pc, cpu::MIN_PROGRAM_ADDRESS as u16 + 4);
         }
 
         //SUBCASE("LD")
@@ -817,12 +815,12 @@ mod tests {
 
             execution::execute_instruction(&mut state, 0x99A0);
 
-            assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 2);
+            assert_eq!(state.pc, cpu::MIN_PROGRAM_ADDRESS as u16 + 2);
 
             state.vRegisters[VA as usize] = 0;
             execution::execute_instruction(&mut state, 0x99A0);
 
-            assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 6);
+            assert_eq!(state.pc, cpu::MIN_PROGRAM_ADDRESS as u16 + 6);
         }
 
         //SUBCASE("LDI")
@@ -868,7 +866,7 @@ mod tests {
             // execution::execute_instruction(&mut state, 0xD115); // Draw sprite
             // for (int i = 0; i < 10; i++)
             // {
-            //     chip8::write_screen_pixel(state, chip8::ScreenWidth - i - 1, chip8::ScreenHeight - i - 1, 1);
+            //     chip8::write_screen_pixel(state, chip8::SCREEN_WIDTH - i - 1, chip8::SCREEN_HEIGHT - i - 1, 1);
             // }
         }
 
@@ -881,11 +879,11 @@ mod tests {
 
             execution::execute_instruction(&mut state, 0xEA9E);
 
-            assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 4); // Skipped
+            assert_eq!(state.pc, cpu::MIN_PROGRAM_ADDRESS as u16 + 4); // Skipped
 
             execution::execute_instruction(&mut state, 0xEB9E);
 
-            assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 6); // Did not skip
+            assert_eq!(state.pc, cpu::MIN_PROGRAM_ADDRESS as u16 + 6); // Did not skip
 
         }
 
@@ -898,11 +896,11 @@ mod tests {
 
             execution::execute_instruction(&mut state, 0xEBA1);
 
-            assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 4); // Skipped
+            assert_eq!(state.pc, cpu::MIN_PROGRAM_ADDRESS as u16 + 4); // Skipped
 
             execution::execute_instruction(&mut state, 0xEAA1);
 
-            assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 6); // Did not skip
+            assert_eq!(state.pc, cpu::MIN_PROGRAM_ADDRESS as u16 + 6); // Did not skip
         }
 
         //SUBCASE("LDT")
@@ -964,11 +962,11 @@ mod tests {
             let mut state = cpu::createCPUState();
 
             state.vRegisters[V9 as usize] = 10;
-            state.i = cpu::MinProgramAddress as u16;
+            state.i = cpu::MIN_PROGRAM_ADDRESS as u16;
 
             execution::execute_instruction(&mut state, 0xF91E);
 
-            assert_eq!(state.i, cpu::MinProgramAddress as u16 + 10);
+            assert_eq!(state.i, cpu::MIN_PROGRAM_ADDRESS as u16 + 10);
         }
 
         //SUBCASE("LDF")
@@ -992,7 +990,7 @@ mod tests {
         {
             let mut state = cpu::createCPUState();
 
-            state.i = cpu::MinProgramAddress as u16;
+            state.i = cpu::MIN_PROGRAM_ADDRESS as u16;
             state.vRegisters[V7 as usize] = 109;
 
             execution::execute_instruction(&mut state, 0xF733);
@@ -1014,7 +1012,7 @@ mod tests {
         {
             let mut state = cpu::createCPUState();
 
-            state.i = cpu::MinProgramAddress as u16;
+            state.i = cpu::MIN_PROGRAM_ADDRESS as u16;
             state.memory[state.i as usize + 0] = 0xF4;
             state.memory[state.i as usize + 1] = 0x33;
             state.memory[state.i as usize + 2] = 0x82;
@@ -1036,7 +1034,7 @@ mod tests {
         {
             let mut state = cpu::createCPUState();
 
-            state.i = cpu::MinProgramAddress as u16;
+            state.i = cpu::MIN_PROGRAM_ADDRESS as u16;
             state.vRegisters[V0 as usize] = 0xF4;
             state.vRegisters[V1 as usize] = 0x33;
             state.vRegisters[V2 as usize] = 0x82;

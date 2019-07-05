@@ -1,25 +1,25 @@
-pub const V_REGISTER_COUNT: usize = 15;
+pub const V_REGISTER_COUNT: usize = 16;
 pub const STACK_SIZE: usize = 16;
 pub const MEMORY_SIZE_IN_BYTES: usize = 0x1000;
 
 // Display
-pub const ScreenWidth: usize = 64;
-pub const ScreenHeight: usize = 32;
-pub const ScreenLineSizeInBytes: usize = ScreenWidth / 8;
+pub const SCREEN_WIDTH: usize = 64;
+pub const SCREEN_HEIGHT: usize = 32;
+pub const SCREEN_LINE_SIZE_IN_BYTES: usize = SCREEN_WIDTH / 8;
 
 // Memory
-pub const MinProgramAddress: usize = 0x0200;
-pub const MaxProgramAddress: u16 = 0x0FFF;
+pub const MIN_PROGRAM_ADDRESS: usize = 0x0200;
+pub const MAX_PROGRAM_ADDRESS: usize = 0x0FFF;
 
 // Timings
-pub const DelayTimerFrequency: u32 = 60;
-pub const InstructionExecutionFrequency: u32 = 500;
-pub const DelayTimerPeriodMs: u32 = 1000 / DelayTimerFrequency;
-pub const InstructionExecutionPeriodMs: u32 = 1000 / InstructionExecutionFrequency;
+pub const DELAY_TIMER_FREQUENCY: u32 = 60;
+pub const DELAY_TIMER_PERIOD_MS: u32 = 1000 / DELAY_TIMER_FREQUENCY;
+pub const INSTRUCTION_EXECUTION_FREQUENCY: u32 = 500;
+pub const INSTRUCTION_EXECUTION_PERIOD_MS: u32 = 1000 / INSTRUCTION_EXECUTION_FREQUENCY;
 
 // Fonts
-const FontTableGlyphCount: usize = 16;
-const GlyphSizeInBytes: usize = 5;
+const FONT_TABLE_GLYPH_COUNT: usize = 16;
+const GLYPH_SIZE_IN_BYTES: usize = 5;
 
 #[allow(dead_code)]
 pub enum VRegisterName
@@ -53,12 +53,12 @@ pub struct CPUState
     pub key_state_prev: u16,
     pub isWaitingForKey: bool,
 
-    pub fontTableOffsets: [u16; FontTableGlyphCount],
+    pub fontTableOffsets: [u16; FONT_TABLE_GLYPH_COUNT],
     pub screen: Vec<Vec<u8>>,
 }
 
-const FontTableOffsetInBytes: usize = 0x0000;
-const FontTable: [u8; GlyphSizeInBytes * FontTableGlyphCount] =
+const FONT_TABLE_OFFSET_IN_BYTES: usize = 0x0000;
+const FONT_TABLE: [u8; GLYPH_SIZE_IN_BYTES * FONT_TABLE_GLYPH_COUNT] =
 [
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -80,19 +80,19 @@ const FontTable: [u8; GlyphSizeInBytes * FontTableGlyphCount] =
 
 fn load_font_table(state: &mut CPUState)
 {
-    let tableOffset = FontTableOffsetInBytes;
-    let tableSize = FontTableGlyphCount * GlyphSizeInBytes;
+    let tableOffset = FONT_TABLE_OFFSET_IN_BYTES;
+    let tableSize = FONT_TABLE_GLYPH_COUNT * GLYPH_SIZE_IN_BYTES;
 
     // Make sure we don't spill in program addressable space.
-    assert!((tableOffset + tableSize - 1) < MinProgramAddress);
+    assert!((tableOffset + tableSize - 1) < MIN_PROGRAM_ADDRESS);
 
-    let fontRangeBegin = FontTableOffsetInBytes;
-    let fontRangeEnd = FontTableOffsetInBytes + tableSize;
-    state.memory[fontRangeBegin..fontRangeEnd].clone_from_slice(&FontTable[..]);
+    let fontRangeBegin = FONT_TABLE_OFFSET_IN_BYTES;
+    let fontRangeEnd = FONT_TABLE_OFFSET_IN_BYTES + tableSize;
+    state.memory[fontRangeBegin..fontRangeEnd].clone_from_slice(&FONT_TABLE[..]);
 
     // Assing font table addresses in memory
-    for tableIndex in 0..FontTableGlyphCount {
-        state.fontTableOffsets[tableIndex] = (tableOffset + GlyphSizeInBytes * tableIndex) as u16;
+    for tableIndex in 0..FONT_TABLE_GLYPH_COUNT {
+        state.fontTableOffsets[tableIndex] = (tableOffset + GLYPH_SIZE_IN_BYTES * tableIndex) as u16;
     }
 }
 
@@ -101,13 +101,13 @@ pub fn createCPUState() -> CPUState
     let mut state: CPUState = Default::default();
 
     // Set PC to first address
-    state.pc = MinProgramAddress as u16;
+    state.pc = MIN_PROGRAM_ADDRESS as u16;
 
     // Clear memory
     state.memory = vec![0; MEMORY_SIZE_IN_BYTES];
 
     // Clear screen
-    state.screen = vec![vec![0; ScreenLineSizeInBytes]; ScreenHeight];
+    state.screen = vec![vec![0; SCREEN_LINE_SIZE_IN_BYTES]; SCREEN_HEIGHT];
 
     load_font_table(&mut state);
 

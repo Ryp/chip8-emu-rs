@@ -23,9 +23,9 @@ fn fill_image_buffer(imageOutput: &mut Vec<u8>, state: &CPUState, palette: &conf
     ];
     let scale = scale as usize;
 
-    for j in 0..cpu::ScreenHeight * scale {
-        for i in 0..cpu::ScreenWidth * scale {
-            let pixelIndexFlatDst: usize = j * cpu::ScreenWidth * scale + i;
+    for j in 0..cpu::SCREEN_HEIGHT * scale {
+        for i in 0..cpu::SCREEN_WIDTH * scale {
+            let pixelIndexFlatDst: usize = j * cpu::SCREEN_WIDTH * scale + i;
             let pixelOutputOffsetInBytes: usize = pixelIndexFlatDst * PixelFormatBGRASizeInBytes;
             let pixelValue: u8 = display::read_screen_pixel(state, i / scale, j / scale);
 
@@ -58,10 +58,10 @@ use sdl2::keyboard::Scancode;
 pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Result<(), String>
 {
     let scale = config.screen_scale as usize;
-    let width = cpu::ScreenWidth * scale;
-    let height = cpu::ScreenHeight * scale;
+    let width = cpu::SCREEN_WIDTH * scale;
+    let height = cpu::SCREEN_HEIGHT * scale;
     let stride = width * PixelFormatBGRASizeInBytes; // No extra space between lines
-    let size = stride * cpu::ScreenHeight * scale;
+    let size = stride * cpu::SCREEN_HEIGHT * scale;
     let pitch = stride;
     let mut image = vec![0 as u8; size];
 
@@ -121,8 +121,8 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
 
         fill_image_buffer(&mut image, state, &config.palette, scale as u32);
 
-        let framebuffer_width = cpu::ScreenWidth * scale;
-        let framebuffer_height = cpu::ScreenHeight * scale;
+        let framebuffer_width = cpu::SCREEN_WIDTH * scale;
+        let framebuffer_height = cpu::SCREEN_HEIGHT * scale;
 
         // Draw
         let mut texture = texture_creator.create_texture_streaming(PixelFormatEnum::BGRA32, framebuffer_width as u32, framebuffer_height as u32)

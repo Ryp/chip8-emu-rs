@@ -9,10 +9,10 @@ pub fn load_program(state: &mut cpu::CPUState, program: Vec<u8>)
     let programSize = program.len();
 
     assert!((programSize & 0x0001) == 0); // Unaligned size
-    assert!(memory::is_valid_memory_range(cpu::MinProgramAddress as u16, programSize as u16, memory::MemoryUsage::Write));
+    assert!(memory::is_valid_memory_range(cpu::MIN_PROGRAM_ADDRESS as u16, programSize, memory::MemoryUsage::Write));
 
-    let rangeBegin = cpu::MinProgramAddress;
-    let rangeEnd = cpu::MinProgramAddress + programSize;
+    let rangeBegin = cpu::MIN_PROGRAM_ADDRESS;
+    let rangeEnd = cpu::MIN_PROGRAM_ADDRESS + programSize;
 
     state.memory[rangeBegin..rangeEnd].clone_from_slice(&program[..]);
 }
@@ -48,17 +48,17 @@ fn update_timers(state: &mut cpu::CPUState, executionCounter: &mut u32, deltaTim
     // Update delay timer
     state.delayTimerAccumulator += deltaTimeMs;
 
-    let delayTimerDecrement: u32 = state.delayTimerAccumulator / cpu::DelayTimerPeriodMs;
+    let delayTimerDecrement: u32 = state.delayTimerAccumulator / cpu::DELAY_TIMER_PERIOD_MS;
     state.delayTimer = max(0, state.delayTimer as i32 - delayTimerDecrement as i32) as u8; // TODO maybe there's a cast error here
 
     // Remove accumulated ticks
-    state.delayTimerAccumulator = state.delayTimerAccumulator % cpu::DelayTimerPeriodMs;
+    state.delayTimerAccumulator = state.delayTimerAccumulator % cpu::DELAY_TIMER_PERIOD_MS;
 
     // Update execution counter
     state.executionTimerAccumulator += deltaTimeMs;
 
-    *executionCounter = state.executionTimerAccumulator / cpu::InstructionExecutionPeriodMs;
-    state.executionTimerAccumulator = state.executionTimerAccumulator % cpu::InstructionExecutionPeriodMs;
+    *executionCounter = state.executionTimerAccumulator / cpu::INSTRUCTION_EXECUTION_PERIOD_MS;
+    state.executionTimerAccumulator = state.executionTimerAccumulator % cpu::INSTRUCTION_EXECUTION_PERIOD_MS;
 
     // TODO Handle sound
     if state.soundTimer > 0 {
