@@ -54,7 +54,6 @@ use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::keyboard::Scancode;
-use sdl2::rect::Rect;
 
 pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Result<(), String>
 {
@@ -76,9 +75,7 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
         .map_err(|e| e.to_string())?;
 
     let mut canvas = window.into_canvas()
-        .software() // TODO
         .build()
-        //.present_vsync()
         .map_err(|e| e.to_string())?;
 
     let texture_creator = canvas.texture_creator();
@@ -147,56 +144,21 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
 
         fill_image_buffer(&mut image, state, &config.palette, scale as u32);
 
+        let framebuffer_width = cpu::ScreenWidth * scale;
+        let framebuffer_height = cpu::ScreenHeight * scale;
+
         // Draw
-        let mut texture = texture_creator.create_texture_streaming(PixelFormatEnum::RGB24, 256, 256)
+        let mut texture = texture_creator.create_texture_streaming(PixelFormatEnum::BGRA32, framebuffer_width as u32, framebuffer_height as u32)
             .map_err(|e| e.to_string())?;
 
-        // Create a red-green gradient
-        texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
-            for y in 0..256 {
-                for x in 0..256 {
-                    let offset = y*pitch + x*3;
-                    buffer[offset] = x as
-                        u8;
-                    buffer[offset
-                        + 1]
-                        = y
-                        as
-                        u8;
-                    buffer[offset
-                        +
-                        2]
-                        =
-                        0;
-                }
-            }
+        // Copy texture data
+        texture.with_lock(None, |mapped_buffer: &mut [u8], mapped_buffer_pitch: usize| {
+            assert_eq!(mapped_buffer_pitch, pitch);
+            mapped_buffer.clone_from_slice(&image[..]);
         })?;
 
-        canvas.clear();
-        canvas.copy(&texture,
-                    None,
-                    Some(Rect::new(100,
-                                   100,
-                                   256,
-                                   256)))?;
-        canvas.copy_ex(&texture,
-                       None,
-                       Some(Rect::new(450,
-                                      100,
-                                      256,
-                                      256)),
-                                      30.0,
-                                      None,
-                                      false,
-                                      false)?;
+        canvas.copy(&texture, None, None)?;
         canvas.present();
-        //SDL_Texture* texture = SDL_CreateTextureFromSurface(ren, surf);
-
-        //canvas.copy(&texture, None, None)?;
-        //canvas.present();
-
-        //SDL_DestroyTexture(texture);
-        // TODO
 
         previous_time_ms = current_time_ms;
     }
