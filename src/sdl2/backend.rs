@@ -5,17 +5,17 @@ use crate::chip8::keyboard;
 use crate::chip8::execution;
 use crate::chip8::cpu::CPUState;
 
-const PixelFormatBGRASizeInBytes: usize = 4;
+const PIXEL_FORMAT_BGRA_SIZE_IN_BYTES: usize = 4;
 
-fn fill_image_buffer(imageOutput: &mut Vec<u8>, state: &CPUState, palette: &config::Palette, scale: u32)
+fn fill_image_buffer(image_output: &mut Vec<u8>, state: &CPUState, palette: &config::Palette, scale: u32)
 {
-    let primary_color_BGRA: [u8; 4] = [
+    let primary_color_bgra: [u8; 4] = [
         (255.0 * palette.primary.b) as u8,
         (255.0 * palette.primary.g) as u8,
         (255.0 * palette.primary.r) as u8,
         255
     ];
-    let secondary_color_BGRA: [u8; 4] = [
+    let secondary_color_bgra: [u8; 4] = [
         (255.0 * palette.secondary.b) as u8,
         (255.0 * palette.secondary.g) as u8,
         (255.0 * palette.secondary.r) as u8,
@@ -25,23 +25,23 @@ fn fill_image_buffer(imageOutput: &mut Vec<u8>, state: &CPUState, palette: &conf
 
     for j in 0..cpu::SCREEN_HEIGHT * scale {
         for i in 0..cpu::SCREEN_WIDTH * scale {
-            let pixelIndexFlatDst: usize = j * cpu::SCREEN_WIDTH * scale + i;
-            let pixelOutputOffsetInBytes: usize = pixelIndexFlatDst * PixelFormatBGRASizeInBytes;
-            let pixelValue: u8 = display::read_screen_pixel(state, i / scale, j / scale);
+            let pixel_index_flat_dst: usize = j * cpu::SCREEN_WIDTH * scale + i;
+            let pixel_output_offset_in_bytes: usize = pixel_index_flat_dst * PIXEL_FORMAT_BGRA_SIZE_IN_BYTES;
+            let pixel_value: u8 = display::read_screen_pixel(state, i / scale, j / scale);
 
-            if pixelValue != 0
+            if pixel_value != 0
             {
-                imageOutput[pixelOutputOffsetInBytes + 0] = primary_color_BGRA[0];
-                imageOutput[pixelOutputOffsetInBytes + 1] = primary_color_BGRA[1];
-                imageOutput[pixelOutputOffsetInBytes + 2] = primary_color_BGRA[2];
-                imageOutput[pixelOutputOffsetInBytes + 3] = primary_color_BGRA[3];
+                image_output[pixel_output_offset_in_bytes + 0] = primary_color_bgra[0];
+                image_output[pixel_output_offset_in_bytes + 1] = primary_color_bgra[1];
+                image_output[pixel_output_offset_in_bytes + 2] = primary_color_bgra[2];
+                image_output[pixel_output_offset_in_bytes + 3] = primary_color_bgra[3];
             }
             else
             {
-                imageOutput[pixelOutputOffsetInBytes + 0] = secondary_color_BGRA[0];
-                imageOutput[pixelOutputOffsetInBytes + 1] = secondary_color_BGRA[1];
-                imageOutput[pixelOutputOffsetInBytes + 2] = secondary_color_BGRA[2];
-                imageOutput[pixelOutputOffsetInBytes + 3] = secondary_color_BGRA[3];
+                image_output[pixel_output_offset_in_bytes + 0] = secondary_color_bgra[0];
+                image_output[pixel_output_offset_in_bytes + 1] = secondary_color_bgra[1];
+                image_output[pixel_output_offset_in_bytes + 2] = secondary_color_bgra[2];
+                image_output[pixel_output_offset_in_bytes + 3] = secondary_color_bgra[3];
             }
         }
     }
@@ -60,7 +60,7 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
     let scale = config.screen_scale as usize;
     let width = cpu::SCREEN_WIDTH * scale;
     let height = cpu::SCREEN_HEIGHT * scale;
-    let stride = width * PixelFormatBGRASizeInBytes; // No extra space between lines
+    let stride = width * PIXEL_FORMAT_BGRA_SIZE_IN_BYTES; // No extra space between lines
     let size = stride * cpu::SCREEN_HEIGHT * scale;
     let pitch = stride;
     let mut image = vec![0 as u8; size];

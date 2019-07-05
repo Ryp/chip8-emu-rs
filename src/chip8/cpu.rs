@@ -36,24 +36,24 @@ pub struct CPUState
     pub pc: u16,
     pub sp: u8,
     pub stack: [u16; STACK_SIZE],
-    pub vRegisters: [u8; V_REGISTER_COUNT],
+    pub v_registers: [u8; V_REGISTER_COUNT],
     pub i: u16,
 
-    pub delayTimer: u8,
-    pub soundTimer: u8,
+    pub delay_timer: u8,
+    pub sound_timer: u8,
 
     // Implementation detail
-    pub delayTimerAccumulator: u32,
-    pub executionTimerAccumulator: u32,
+    pub delay_timer_accumulator: u32,
+    pub execution_timer_accumulator: u32,
 
     pub memory: Vec<u8>,
 
     pub key_state: u16,
 
     pub key_state_prev: u16,
-    pub isWaitingForKey: bool,
+    pub is_waiting_for_key: bool,
 
-    pub fontTableOffsets: [u16; FONT_TABLE_GLYPH_COUNT],
+    pub font_table_offsets: [u16; FONT_TABLE_GLYPH_COUNT],
     pub screen: Vec<Vec<u8>>,
 }
 
@@ -80,23 +80,23 @@ const FONT_TABLE: [u8; GLYPH_SIZE_IN_BYTES * FONT_TABLE_GLYPH_COUNT] =
 
 fn load_font_table(state: &mut CPUState)
 {
-    let tableOffset = FONT_TABLE_OFFSET_IN_BYTES;
-    let tableSize = FONT_TABLE_GLYPH_COUNT * GLYPH_SIZE_IN_BYTES;
+    let table_offset = FONT_TABLE_OFFSET_IN_BYTES;
+    let table_size = FONT_TABLE_GLYPH_COUNT * GLYPH_SIZE_IN_BYTES;
 
     // Make sure we don't spill in program addressable space.
-    assert!((tableOffset + tableSize - 1) < MIN_PROGRAM_ADDRESS);
+    assert!((table_offset + table_size - 1) < MIN_PROGRAM_ADDRESS);
 
-    let fontRangeBegin = FONT_TABLE_OFFSET_IN_BYTES;
-    let fontRangeEnd = FONT_TABLE_OFFSET_IN_BYTES + tableSize;
-    state.memory[fontRangeBegin..fontRangeEnd].clone_from_slice(&FONT_TABLE[..]);
+    let font_range_begin = FONT_TABLE_OFFSET_IN_BYTES;
+    let font_range_end = FONT_TABLE_OFFSET_IN_BYTES + table_size;
+    state.memory[font_range_begin..font_range_end].clone_from_slice(&FONT_TABLE[..]);
 
     // Assing font table addresses in memory
-    for tableIndex in 0..FONT_TABLE_GLYPH_COUNT {
-        state.fontTableOffsets[tableIndex] = (tableOffset + GLYPH_SIZE_IN_BYTES * tableIndex) as u16;
+    for table_index in 0..FONT_TABLE_GLYPH_COUNT {
+        state.font_table_offsets[table_index] = (table_offset + GLYPH_SIZE_IN_BYTES * table_index) as u16;
     }
 }
 
-pub fn createCPUState() -> CPUState
+pub fn create_chip8_state() -> CPUState
 {
     let mut state: CPUState = Default::default();
 

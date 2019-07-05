@@ -7,11 +7,11 @@ use super::cpu::CPUState;
 // A  0  B  F
 pub type KeyID = u8;
 
-const KeyIDCount: u8 = 16;
+const KEY_ID_COUNT: u8 = 16;
 
 pub fn is_key_pressed(state: &CPUState, key: KeyID) -> bool
 {
-    assert!(key < KeyIDCount); // Invalid key
+    assert!(key < KEY_ID_COUNT); // Invalid key
 
     return (state.key_state & (1 << key)) != 0;
 }
@@ -33,7 +33,7 @@ pub fn get_key_pressed(key_state: u16) -> KeyID
 
 pub fn set_key_pressed(state: &mut CPUState, key: KeyID, pressed_state: bool)
 {
-    assert!(key < KeyIDCount); // Invalid key
+    assert!(key < KEY_ID_COUNT); // Invalid key
 
     let key_mask: u16 = 1 << key;
     state.key_state = (state.key_state & !key_mask) | if pressed_state { key_mask } else { 0 };

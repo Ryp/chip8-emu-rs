@@ -10,7 +10,7 @@ fn main() {
     let args: Vec<_> = env::args().collect();
     assert_eq!(args.len(), 2);
 
-    let mut state: chip8::CPUState = chip8::createCPUState();
+    let mut state: chip8::CPUState = chip8::create_chip8_state();
 
     // Load program in chip8 memory
     {

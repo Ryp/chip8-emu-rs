@@ -7,19 +7,19 @@ pub enum MemoryUsage
     Execute,
 }
 
-pub fn is_valid_memory_range(baseAddress: u16, sizeInBytes: usize, usage: MemoryUsage) -> bool
+pub fn is_valid_memory_range(base_address: u16, size_in_bytes: usize, usage: MemoryUsage) -> bool
 {
-    assert!(sizeInBytes > 0); // Invalid address range size
+    assert!(size_in_bytes > 0); // Invalid address range size
 
-    let baseAddress = baseAddress as usize;
-    let endAddress = baseAddress + (sizeInBytes - 1);
+    let base_address = base_address as usize;
+    let end_address = base_address + (size_in_bytes - 1);
 
-    if endAddress < baseAddress {
+    if end_address < base_address {
         return false; // Overflow
     }
 
     match usage {
-        MemoryUsage::Read => (endAddress <= cpu::MAX_PROGRAM_ADDRESS),
-        MemoryUsage::Write | MemoryUsage::Execute => (baseAddress >= cpu::MIN_PROGRAM_ADDRESS && endAddress <= cpu::MAX_PROGRAM_ADDRESS),
+        MemoryUsage::Read => (end_address <= cpu::MAX_PROGRAM_ADDRESS),
+        MemoryUsage::Write | MemoryUsage::Execute => (base_address >= cpu::MIN_PROGRAM_ADDRESS && end_address <= cpu::MAX_PROGRAM_ADDRESS),
     }
 }

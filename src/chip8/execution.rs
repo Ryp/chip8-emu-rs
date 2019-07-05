@@ -6,15 +6,15 @@ use std::cmp::max;
 
 pub fn load_program(state: &mut cpu::CPUState, program: Vec<u8>)
 {
-    let programSize = program.len();
+    let program_size = program.len();
 
-    assert!((programSize & 0x0001) == 0); // Unaligned size
-    assert!(memory::is_valid_memory_range(cpu::MIN_PROGRAM_ADDRESS as u16, programSize, memory::MemoryUsage::Write));
+    assert!((program_size & 0x0001) == 0); // Unaligned size
+    assert!(memory::is_valid_memory_range(cpu::MIN_PROGRAM_ADDRESS as u16, program_size, memory::MemoryUsage::Write));
 
-    let rangeBegin = cpu::MIN_PROGRAM_ADDRESS;
-    let rangeEnd = cpu::MIN_PROGRAM_ADDRESS + programSize;
+    let range_begin = cpu::MIN_PROGRAM_ADDRESS;
+    let range_end = cpu::MIN_PROGRAM_ADDRESS + program_size;
 
-    state.memory[rangeBegin..rangeEnd].clone_from_slice(&program[..]);
+    state.memory[range_begin..range_end].clone_from_slice(&program[..]);
 }
 
 pub fn load_next_instruction(state: &cpu::CPUState) -> u16
@@ -29,47 +29,47 @@ pub fn load_next_instruction(state: &cpu::CPUState) -> u16
     instruction as u16
 }
 
-pub fn execute_step(state: &mut cpu::CPUState, deltaTimeMs: u32)
+pub fn execute_step(state: &mut cpu::CPUState, delta_time_ms: u32)
 {
-    let mut instructionsToExecute: u32 = 0;
+    let mut instructions_to_execute: u32 = 0;
 
-    update_timers(state, &mut instructionsToExecute, deltaTimeMs);
+    update_timers(state, &mut instructions_to_execute, delta_time_ms);
 
-    for _i in 0..instructionsToExecute
+    for _i in 0..instructions_to_execute
     {
         // Simulate logic
-        let nextInstruction: u16 = load_next_instruction(state);
-        execute_instruction(state, nextInstruction);
+        let next_instruction: u16 = load_next_instruction(state);
+        execute_instruction(state, next_instruction);
     }
 }
 
-fn update_timers(state: &mut cpu::CPUState, executionCounter: &mut u32, deltaTimeMs: u32)
+fn update_timers(state: &mut cpu::CPUState, execution_counter: &mut u32, delta_time_ms: u32)
 {
     // Update delay timer
-    state.delayTimerAccumulator += deltaTimeMs;
+    state.delay_timer_accumulator += delta_time_ms;
 
-    let delayTimerDecrement: u32 = state.delayTimerAccumulator / cpu::DELAY_TIMER_PERIOD_MS;
-    state.delayTimer = max(0, state.delayTimer as i32 - delayTimerDecrement as i32) as u8; // TODO maybe there's a cast error here
+    let delay_timer_decrement: u32 = state.delay_timer_accumulator / cpu::DELAY_TIMER_PERIOD_MS;
+    state.delay_timer = max(0, state.delay_timer as i32 - delay_timer_decrement as i32) as u8; // TODO maybe there's a cast error here
 
     // Remove accumulated ticks
-    state.delayTimerAccumulator = state.delayTimerAccumulator % cpu::DELAY_TIMER_PERIOD_MS;
+    state.delay_timer_accumulator = state.delay_timer_accumulator % cpu::DELAY_TIMER_PERIOD_MS;
 
     // Update execution counter
-    state.executionTimerAccumulator += deltaTimeMs;
+    state.execution_timer_accumulator += delta_time_ms;
 
-    *executionCounter = state.executionTimerAccumulator / cpu::INSTRUCTION_EXECUTION_PERIOD_MS;
-    state.executionTimerAccumulator = state.executionTimerAccumulator % cpu::INSTRUCTION_EXECUTION_PERIOD_MS;
+    *execution_counter = state.execution_timer_accumulator / cpu::INSTRUCTION_EXECUTION_PERIOD_MS;
+    state.execution_timer_accumulator = state.execution_timer_accumulator % cpu::INSTRUCTION_EXECUTION_PERIOD_MS;
 
     // TODO Handle sound
-    if state.soundTimer > 0 {
-        state.soundTimer += 1;
+    if state.sound_timer > 0 {
+        state.sound_timer += 1;
     }
 }
 
 pub fn execute_instruction(state: &mut cpu::CPUState, instruction: u16)
 {
     // Save PC for later
-    let pcSave = state.pc;
+    let pc_save = state.pc;
 
     // Decode and execute
     if instruction == 0x00E0 {
@@ -100,108 +100,108 @@ pub fn execute_instruction(state: &mut cpu::CPUState, instruction: u16)
     }
     else if (instruction & !0x0FFF) == 0x3000 {
         // 3xkk - SE Vx, byte
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
         let value = (instruction & 0x00FF) as u8;
 
-        execute_se(state, registerName, value);
+        execute_se(state, register_name, value);
     }
     else if (instruction & !0x0FFF) == 0x4000 {
         // 4xkk - SNE Vx, byte
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
         let value = (instruction & 0x00FF) as u8;
 
-        execute_sne(state, registerName, value);
+        execute_sne(state, register_name, value);
     }
     else if (instruction & !0x0FF0) == 0x5000 {
         // 5xy0 - SE Vx, Vy
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
 
-        execute_se2(state, registerLHS, registerRHS);
+        execute_se2(state, register_lhs, register_rhs);
     }
     else if (instruction & !0x0FFF) == 0x6000 {
         // 6xkk - LD Vx, byte
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
         let value = (instruction & 0x00FF) as u8;
 
-        execute_ld(state, registerName, value);
+        execute_ld(state, register_name, value);
     }
     else if (instruction & !0x0FFF) == 0x7000 {
         // 7xkk - ADD Vx, byte
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
         let value = (instruction & 0x00FF) as u8;
 
-        execute_add(state, registerName, value);
+        execute_add(state, register_name, value);
     }
     else if (instruction & !0x0FF0) == 0x8000 {
         // 8xy0 - LD Vx, Vy
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
 
-        execute_ld2(state, registerLHS, registerRHS);
+        execute_ld2(state, register_lhs, register_rhs);
     }
     else if (instruction & !0x0FF0) == 0x8001 {
         // 8xy1 - OR Vx, Vy
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
 
-        execute_or(state, registerLHS, registerRHS);
+        execute_or(state, register_lhs, register_rhs);
     }
     else if (instruction & !0x0FF0) == 0x8002 {
         // 8xy2 - AND Vx, Vy
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
 
-        execute_and(state, registerLHS, registerRHS);
+        execute_and(state, register_lhs, register_rhs);
     }
     else if (instruction & !0x0FF0) == 0x8003 {
         // 8xy3 - XOR Vx, Vy
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
 
-        execute_xor(state, registerLHS, registerRHS);
+        execute_xor(state, register_lhs, register_rhs);
     }
     else if (instruction & !0x0FF0) == 0x8004 {
         // 8xy4 - ADD Vx, Vy
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
 
-        execute_add2(state, registerLHS, registerRHS);
+        execute_add2(state, register_lhs, register_rhs);
     }
     else if (instruction & !0x0FF0) == 0x8005 {
         // 8xy5 - SUB Vx, Vy
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
 
-        execute_sub(state, registerLHS, registerRHS);
+        execute_sub(state, register_lhs, register_rhs);
     }
     else if (instruction & !0x0FF0) == 0x8006 {
         // 8xy6 - SHR Vx {, Vy}
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
 
-        execute_shr1(state, registerLHS, registerRHS);
+        execute_shr1(state, register_lhs, register_rhs);
     }
     else if (instruction & !0x0FF0) == 0x8007 {
         // 8xy7 - SUBN Vx, Vy
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
 
-        execute_subn(state, registerLHS, registerRHS);
+        execute_subn(state, register_lhs, register_rhs);
     }
     else if (instruction & !0x0FF0) == 0x800E {
         // 8xyE - SHL Vx {, Vy}
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
 
-        execute_shl1(state, registerLHS, registerRHS);
+        execute_shl1(state, register_lhs, register_rhs);
     }
     else if (instruction & !0x0FF0) == 0x9000 {
         // 9xy0 - SNE Vx, Vy
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
 
-        execute_sne2(state, registerLHS, registerRHS);
+        execute_sne2(state, register_lhs, register_rhs);
     }
     else if (instruction & !0x0FFF) == 0xA000 {
         // Annn - LD I, addr
@@ -217,84 +217,84 @@ pub fn execute_instruction(state: &mut cpu::CPUState, instruction: u16)
     }
     else if (instruction & !0x0FFF) == 0xC000 {
         // Cxkk - RND Vx, byte
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
         let value = (instruction & 0x00FF) as u8;
 
-        execute_rnd(state, registerName, value);
+        execute_rnd(state, register_name, value);
     }
     else if (instruction & !0x0FFF) == 0xD000 {
         // Dxyn - DRW Vx, Vy, nibble
-        let registerLHS = ((instruction & 0x0F00) >> 8) as u8;
-        let registerRHS = ((instruction & 0x00F0) >> 4) as u8;
+        let register_lhs = ((instruction & 0x0F00) >> 8) as u8;
+        let register_rhs = ((instruction & 0x00F0) >> 4) as u8;
         let size = (instruction & 0x000F) as u8;
 
-        execute_drw(state, registerLHS, registerRHS, size);
+        execute_drw(state, register_lhs, register_rhs, size);
     }
     else if (instruction & !0x0F00) == 0xE09E {
         // Ex9E - SKP Vx
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
-        execute_skp(state, registerName);
+        execute_skp(state, register_name);
     }
     else if (instruction & !0x0F00) == 0xE0A1 {
         // ExA1 - SKNP Vx
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
-        execute_sknp(state, registerName);
+        execute_sknp(state, register_name);
     }
     else if (instruction & !0x0F00) == 0xF007 {
         // Fx07 - LD Vx, DT
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
-        execute_ldt(state, registerName);
+        execute_ldt(state, register_name);
     }
     else if (instruction & !0x0F00) == 0xF00A {
         // Fx0A - LD Vx, K
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
-        execute_ldk(state, registerName);
+        execute_ldk(state, register_name);
     }
     else if (instruction & !0x0F00) == 0xF015 {
         // Fx15 - LD DT, Vx
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
-        execute_lddt(state, registerName);
+        execute_lddt(state, register_name);
     }
     else if (instruction & !0x0F00) == 0xF018 {
         // Fx18 - LD ST, Vx
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
-        execute_ldst(state, registerName);
+        execute_ldst(state, register_name);
     }
     else if (instruction & !0x0F00) == 0xF01E {
         // Fx1E - ADD I, Vx
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
-        execute_addi(state, registerName);
+        execute_addi(state, register_name);
     }
     else if (instruction & !0x0F00) == 0xF029 {
         // Fx29 - LD F, Vx
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
-        execute_ldf(state, registerName);
+        execute_ldf(state, register_name);
     }
     else if (instruction & !0x0F00) == 0xF033 {
         // Fx33 - LD B, Vx
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
-        execute_ldb(state, registerName);
+        execute_ldb(state, register_name);
     }
     else if (instruction & !0x0F00) == 0xF055 {
         // Fx55 - LD [I], Vx
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
-        execute_ldai(state, registerName);
+        execute_ldai(state, register_name);
     }
     else if (instruction & !0x0F00) == 0xF065 {
         // Fx65 - LD Vx, [I]
-        let registerName = ((instruction & 0x0F00) >> 8) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
-        execute_ldm(state, registerName);
+        execute_ldm(state, register_name);
     }
     else
     {
@@ -303,7 +303,7 @@ pub fn execute_instruction(state: &mut cpu::CPUState, instruction: u16)
 
     // Increment PC only if it was NOT overriden by an instruction,
     // or if we are waiting for user input.
-    if pcSave == state.pc && !state.isWaitingForKey {
+    if pc_save == state.pc && !state.is_waiting_for_key {
         state.pc += 2;
     }
 
