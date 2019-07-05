@@ -37,5 +37,5 @@ fn main() {
         screen_scale: 8
     };
 
-    sdl2::execute_main_loop(&mut state, &config);
+    sdl2::execute_main_loop(&mut state, &config).unwrap();
 }

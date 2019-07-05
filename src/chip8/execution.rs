@@ -1,6 +1,5 @@
 use super::cpu;
 use super::memory;
-use super::config::EmuConfig;
 use super::instruction::*;
 
 use std::cmp::max;
@@ -30,7 +29,7 @@ pub fn load_next_instruction(state: &cpu::CPUState) -> u16
     instruction as u16
 }
 
-pub fn execute_step(config: &EmuConfig, state: &mut cpu::CPUState, deltaTimeMs: u32)
+pub fn execute_step(state: &mut cpu::CPUState, deltaTimeMs: u32)
 {
     let mut instructionsToExecute: u32 = 0;
 
@@ -40,7 +39,7 @@ pub fn execute_step(config: &EmuConfig, state: &mut cpu::CPUState, deltaTimeMs: 
     {
         // Simulate logic
         let nextInstruction: u16 = load_next_instruction(state);
-        execute_instruction(config, state, nextInstruction);
+        execute_instruction(state, nextInstruction);
     }
 }
 
@@ -67,7 +66,7 @@ fn update_timers(state: &mut cpu::CPUState, executionCounter: &mut u32, deltaTim
     }
 }
 
-pub fn execute_instruction(config: &EmuConfig, state: &mut cpu::CPUState, instruction: u16)
+pub fn execute_instruction(state: &mut cpu::CPUState, instruction: u16)
 {
     // Save PC for later
     let pcSave = state.pc;

@@ -62,7 +62,7 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
     let height = cpu::ScreenHeight * scale;
     let stride = width * PixelFormatBGRASizeInBytes; // No extra space between lines
     let size = stride * cpu::ScreenHeight * scale;
-
+    let pitch = stride;
     let mut image = vec![0 as u8; size];
 
     let sdl_context = sdl2::init()?;
@@ -79,29 +79,6 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
         .map_err(|e| e.to_string())?;
 
     let texture_creator = canvas.texture_creator();
-
-    let rmask: u32;
-    let gmask: u32;
-    let bmask: u32;
-    let amask: u32;
-
-    // TODO
-    //#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-    //    rmask = 0xff000000;
-    //    gmask = 0x00ff0000;
-    //    bmask = 0x0000ff00;
-    //    amask = 0x000000ff;
-    //#else // little endian, like x86
-    rmask = 0x000000ff;
-    gmask = 0x0000ff00;
-    bmask = 0x00ff0000;
-    amask = 0xff000000;
-    //#endif
-
-    let depth: usize = 32;
-    let pitch = stride;
-
-    //SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(image, width, height, depth, pitch, rmask, gmask, bmask, amask);
 
     let mut previous_time_ms: u32 = timer_subsystem.ticks();
 
@@ -140,7 +117,7 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
         let current_time_ms: u32 = timer_subsystem.ticks();
         let delta_time_ms: u32 = current_time_ms - previous_time_ms;
 
-        execution::execute_step(&config, state, delta_time_ms);
+        execution::execute_step(state, delta_time_ms);
 
         fill_image_buffer(&mut image, state, &config.palette, scale as u32);
 

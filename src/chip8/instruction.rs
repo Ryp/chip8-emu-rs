@@ -54,9 +54,9 @@ pub fn execute_call(state: &mut CPUState, address: u16)
     assert!((address & 0x0001) == 0); // Unaligned address
     assert!(memory::is_valid_memory_range(address, 2, MemoryUsage::Execute));
 
-    assert!((state.sp as usize) < cpu::StackSize); // Stack overflow
+    assert!((state.sp as usize) < cpu::STACK_SIZE); // Stack overflow
 
-    state.sp = if (state.sp as usize) < cpu::StackSize { state.sp + 1 } else { state.sp }; // Increment sp
+    state.sp = if (state.sp as usize) < cpu::STACK_SIZE { state.sp + 1 } else { state.sp }; // Increment sp
     state.stack[state.sp as usize] = state.pc; // Put PC on top of the stack
     state.pc = address; // Set PC to new address
 }
@@ -542,20 +542,16 @@ pub fn execute_ldm(state: &mut CPUState, registerName: u8)
 mod tests {
     use super::*;
     use super::super::execution;
-    use super::super::config;
-    //use super::super::cpu::VRegisterName::*;
 
     #[test]
     fn instructions() {
-        let config = config::EmuConfig { debug_mode: false, ..Default::default() };
-
         //SUBCASE("CLS")
         {
             let mut state = cpu::createCPUState();
             state.screen[0][0] = 0b11001100;
             state.screen[cpu::ScreenHeight - 1][cpu::ScreenLineSizeInBytes - 1] = 0b10101010;
 
-            execution::execute_instruction(&config, &mut state, 0x00E0);
+            execution::execute_instruction(&mut state, 0x00E0);
 
             assert_eq!(state.screen[0][0], 0x00);
             assert_eq!(state.screen[cpu::ScreenHeight - 1][cpu::ScreenLineSizeInBytes - 1], 0x00);
@@ -564,11 +560,11 @@ mod tests {
         //SUBCASE("JP")
         {
             let mut state = cpu::createCPUState();
-            execution::execute_instruction(&config, &mut state, 0x1240);
+            execution::execute_instruction(&mut state, 0x1240);
 
             assert_eq!(state.pc, 0x0240);
 
-            execution::execute_instruction(&config, &mut state, 0x1FFE);
+            execution::execute_instruction(&mut state, 0x1FFE);
 
             assert_eq!(state.pc, 0x0FFE);
         }
@@ -576,22 +572,22 @@ mod tests {
         //SUBCASE("CALL/RET")
         {
             let mut state = cpu::createCPUState();
-            execution::execute_instruction(&config, &mut state, 0x2F00);
+            execution::execute_instruction(&mut state, 0x2F00);
 
             assert_eq!(state.sp, 1);
             assert_eq!(state.pc, 0x0F00);
 
-            execution::execute_instruction(&config, &mut state, 0x2A00);
+            execution::execute_instruction(&mut state, 0x2A00);
 
             assert_eq!(state.sp, 2);
             assert_eq!(state.pc, 0x0A00);
 
-            execution::execute_instruction(&config, &mut state, 0x00EE);
+            execution::execute_instruction(&mut state, 0x00EE);
 
             assert_eq!(state.sp, 1);
             assert_eq!(state.pc, 0x0F02);
 
-            execution::execute_instruction(&config, &mut state, 0x00EE);
+            execution::execute_instruction(&mut state, 0x00EE);
 
             assert_eq!(state.sp, 0);
             assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 2);
@@ -600,7 +596,7 @@ mod tests {
         //SUBCASE("SE")
         {
             let mut state = cpu::createCPUState();
-            execution::execute_instruction(&config, &mut state, 0x3000);
+            execution::execute_instruction(&mut state, 0x3000);
 
             assert_eq!(state.vRegisters[V0 as usize], 0);
             assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 4);
@@ -609,7 +605,7 @@ mod tests {
         //SUBCASE("SNE")
         {
             let mut state = cpu::createCPUState();
-            execution::execute_instruction(&config, &mut state, 0x40FF);
+            execution::execute_instruction(&mut state, 0x40FF);
 
             assert_eq!(state.vRegisters[V0 as usize], 0);
             assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 4);
@@ -618,7 +614,7 @@ mod tests {
         //SUBCASE("SE2")
         {
             let mut state = cpu::createCPUState();
-            execution::execute_instruction(&config, &mut state, 0x5120);
+            execution::execute_instruction(&mut state, 0x5120);
 
             assert_eq!(state.vRegisters[V0 as usize], 0);
             assert_eq!(state.vRegisters[V1 as usize], 0);
@@ -628,11 +624,11 @@ mod tests {
         //SUBCASE("LD")
         {
             let mut state = cpu::createCPUState();
-            execution::execute_instruction(&config, &mut state, 0x06042);
+            execution::execute_instruction(&mut state, 0x06042);
 
             assert_eq!(state.vRegisters[V0 as usize], 0x42);
 
-            execution::execute_instruction(&config, &mut state, 0x06A33);
+            execution::execute_instruction(&mut state, 0x06A33);
 
             assert_eq!(state.vRegisters[VA as usize], 0x33);
         }
@@ -642,11 +638,11 @@ mod tests {
             let mut state = cpu::createCPUState();
             assert_eq!(state.vRegisters[V2 as usize], 0x00);
 
-            execution::execute_instruction(&config, &mut state, 0x7203);
+            execution::execute_instruction(&mut state, 0x7203);
 
             assert_eq!(state.vRegisters[V2 as usize], 0x03);
 
-            execution::execute_instruction(&config, &mut state, 0x7204);
+            execution::execute_instruction(&mut state, 0x7204);
 
             assert_eq!(state.vRegisters[V2 as usize], 0x07);
         }
@@ -657,7 +653,7 @@ mod tests {
 
             state.vRegisters[V3 as usize] = 32;
 
-            execution::execute_instruction(&config, &mut state, 0x8030);
+            execution::execute_instruction(&mut state, 0x8030);
 
             assert_eq!(state.vRegisters[V0 as usize], 32);
         }
@@ -669,7 +665,7 @@ mod tests {
             state.vRegisters[VC as usize] = 0xF0;
             state.vRegisters[VD as usize] = 0x0F;
 
-            execution::execute_instruction(&config, &mut state, 0x8CD1);
+            execution::execute_instruction(&mut state, 0x8CD1);
 
             assert_eq!(state.vRegisters[VC as usize], 0xFF);
         }
@@ -681,14 +677,14 @@ mod tests {
             state.vRegisters[VC as usize] = 0xF0;
             state.vRegisters[VD as usize] = 0x0F;
 
-            execution::execute_instruction(&config, &mut state, 0x8CD2);
+            execution::execute_instruction(&mut state, 0x8CD2);
 
             assert_eq!(state.vRegisters[VC as usize], 0x00);
 
             state.vRegisters[VC as usize] = 0xF0;
             state.vRegisters[VD as usize] = 0xFF;
 
-            execution::execute_instruction(&config, &mut state, 0x8CD2);
+            execution::execute_instruction(&mut state, 0x8CD2);
 
             assert_eq!(state.vRegisters[VC as usize], 0xF0);
         }
@@ -700,7 +696,7 @@ mod tests {
             state.vRegisters[VC as usize] = 0x10;
             state.vRegisters[VD as usize] = 0x1F;
 
-            execution::execute_instruction(&config, &mut state, 0x8CD3);
+            execution::execute_instruction(&mut state, 0x8CD3);
 
             assert_eq!(state.vRegisters[VC as usize], 0x0F);
         }
@@ -712,7 +708,7 @@ mod tests {
             state.vRegisters[V0 as usize] = 8;
             state.vRegisters[V1 as usize] = 8;
 
-            execution::execute_instruction(&config, &mut state, 0x8014);
+            execution::execute_instruction(&mut state, 0x8014);
 
             assert_eq!(state.vRegisters[V0 as usize], 16);
             assert_eq!(state.vRegisters[VF as usize], 0);
@@ -720,7 +716,7 @@ mod tests {
             state.vRegisters[V0 as usize] = 128;
             state.vRegisters[V1 as usize] = 130;
 
-            execution::execute_instruction(&config, &mut state, 0x8014);
+            execution::execute_instruction(&mut state, 0x8014);
 
             assert_eq!(state.vRegisters[V0 as usize], 2);
             assert_eq!(state.vRegisters[VF as usize], 1);
@@ -733,7 +729,7 @@ mod tests {
             state.vRegisters[V0 as usize] = 8;
             state.vRegisters[V1 as usize] = 7;
 
-            execution::execute_instruction(&config, &mut state, 0x8015);
+            execution::execute_instruction(&mut state, 0x8015);
 
             assert_eq!(state.vRegisters[V0 as usize], 1);
             assert_eq!(state.vRegisters[VF as usize], 1);
@@ -741,7 +737,7 @@ mod tests {
             state.vRegisters[V0 as usize] = 8;
             state.vRegisters[V1 as usize] = 9;
 
-            execution::execute_instruction(&config, &mut state, 0x8015);
+            execution::execute_instruction(&mut state, 0x8015);
 
             assert_eq!(state.vRegisters[V0 as usize], 255);
             assert_eq!(state.vRegisters[VF as usize], 0);
@@ -753,22 +749,22 @@ mod tests {
 
             state.vRegisters[V0 as usize] = 8;
 
-            execution::execute_instruction(&config, &mut state, 0x8016);
+            execution::execute_instruction(&mut state, 0x8016);
 
             assert_eq!(state.vRegisters[V0 as usize], 4);
             assert_eq!(state.vRegisters[VF as usize], 0);
 
-            execution::execute_instruction(&config, &mut state, 0x8026);
+            execution::execute_instruction(&mut state, 0x8026);
 
             assert_eq!(state.vRegisters[V0 as usize], 2);
             assert_eq!(state.vRegisters[VF as usize], 0);
 
-            execution::execute_instruction(&config, &mut state, 0x8026);
+            execution::execute_instruction(&mut state, 0x8026);
 
             assert_eq!(state.vRegisters[V0 as usize], 1);
             assert_eq!(state.vRegisters[VF as usize], 0);
 
-            execution::execute_instruction(&config, &mut state, 0x8026);
+            execution::execute_instruction(&mut state, 0x8026);
 
             assert_eq!(state.vRegisters[V0 as usize], 0);
             assert_eq!(state.vRegisters[VF as usize], 1);
@@ -781,7 +777,7 @@ mod tests {
             state.vRegisters[V0 as usize] = 7;
             state.vRegisters[V1 as usize] = 8;
 
-            execution::execute_instruction(&config, &mut state, 0x8017);
+            execution::execute_instruction(&mut state, 0x8017);
 
             assert_eq!(state.vRegisters[V0 as usize], 1);
             assert_eq!(state.vRegisters[VF as usize], 1);
@@ -789,7 +785,7 @@ mod tests {
             state.vRegisters[V0 as usize] = 2;
             state.vRegisters[V1 as usize] = 1;
 
-            execution::execute_instruction(&config, &mut state, 0x8017);
+            execution::execute_instruction(&mut state, 0x8017);
 
             assert_eq!(state.vRegisters[V0 as usize], 255);
             assert_eq!(state.vRegisters[VF as usize], 0);
@@ -801,12 +797,12 @@ mod tests {
 
             state.vRegisters[V0 as usize] = 64;
 
-            execution::execute_instruction(&config, &mut state, 0x801E);
+            execution::execute_instruction(&mut state, 0x801E);
 
             assert_eq!(state.vRegisters[V0 as usize], 128);
             assert_eq!(state.vRegisters[VF as usize], 0);
 
-            execution::execute_instruction(&config, &mut state, 0x801E);
+            execution::execute_instruction(&mut state, 0x801E);
 
             assert_eq!(state.vRegisters[V0 as usize], 0);
             assert_eq!(state.vRegisters[VF as usize], 1);
@@ -819,12 +815,12 @@ mod tests {
             state.vRegisters[V9 as usize] = 64;
             state.vRegisters[VA as usize] = 64;
 
-            execution::execute_instruction(&config, &mut state, 0x99A0);
+            execution::execute_instruction(&mut state, 0x99A0);
 
             assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 2);
 
             state.vRegisters[VA as usize] = 0;
-            execution::execute_instruction(&config, &mut state, 0x99A0);
+            execution::execute_instruction(&mut state, 0x99A0);
 
             assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 6);
         }
@@ -833,7 +829,7 @@ mod tests {
         {
             let mut state = cpu::createCPUState();
 
-            execution::execute_instruction(&config, &mut state, 0xA242);
+            execution::execute_instruction(&mut state, 0xA242);
 
             assert_eq!(state.i, 0x0242);
         }
@@ -844,7 +840,7 @@ mod tests {
 
             state.vRegisters[V0 as usize] = 0x02;
 
-            execution::execute_instruction(&config, &mut state, 0xB240);
+            execution::execute_instruction(&mut state, 0xB240);
 
             assert_eq!(state.pc, 0x0242);
         }
@@ -853,11 +849,11 @@ mod tests {
         {
             let mut state = cpu::createCPUState();
 
-            execution::execute_instruction(&config, &mut state, 0xC10F);
+            execution::execute_instruction(&mut state, 0xC10F);
 
             assert_eq!(state.vRegisters[V1 as usize] & !0x0F, 0);
 
-            execution::execute_instruction(&config, &mut state, 0xC1F0);
+            execution::execute_instruction(&mut state, 0xC1F0);
 
             assert_eq!(state.vRegisters[V1 as usize] & !0xF0, 0);
         }
@@ -865,11 +861,11 @@ mod tests {
         //SUBCASE("DRW")
         {
             // TODO
-            // execution::execute_instruction(&config, &mut state, 0x00E0); // Clear screen
+            // execution::execute_instruction(&mut state, 0x00E0); // Clear screen
             // state.vRegisters[V0 as usize] = 0x0F; // Set digit to print
             // state.vRegisters[V1 as usize] = 0x00; // Set digit to print
-            // execution::execute_instruction(&config, &mut state, 0xF029); // Load digit sprite address
-            // execution::execute_instruction(&config, &mut state, 0xD115); // Draw sprite
+            // execution::execute_instruction(&mut state, 0xF029); // Load digit sprite address
+            // execution::execute_instruction(&mut state, 0xD115); // Draw sprite
             // for (int i = 0; i < 10; i++)
             // {
             //     chip8::write_screen_pixel(state, chip8::ScreenWidth - i - 1, chip8::ScreenHeight - i - 1, 1);
@@ -883,11 +879,11 @@ mod tests {
             state.vRegisters[VA as usize] = 0x0F;
             state.key_state = 0x8000;
 
-            execution::execute_instruction(&config, &mut state, 0xEA9E);
+            execution::execute_instruction(&mut state, 0xEA9E);
 
             assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 4); // Skipped
 
-            execution::execute_instruction(&config, &mut state, 0xEB9E);
+            execution::execute_instruction(&mut state, 0xEB9E);
 
             assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 6); // Did not skip
 
@@ -900,11 +896,11 @@ mod tests {
             state.vRegisters[VA as usize] = 0xF;
             state.key_state = 0x8000;
 
-            execution::execute_instruction(&config, &mut state, 0xEBA1);
+            execution::execute_instruction(&mut state, 0xEBA1);
 
             assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 4); // Skipped
 
-            execution::execute_instruction(&config, &mut state, 0xEAA1);
+            execution::execute_instruction(&mut state, 0xEAA1);
 
             assert_eq!(state.pc, cpu::MinProgramAddress as u16 + 6); // Did not skip
         }
@@ -916,7 +912,7 @@ mod tests {
             state.delayTimer = 42;
             state.vRegisters[V4 as usize] = 0;
 
-            execution::execute_instruction(&config, &mut state, 0xF407);
+            execution::execute_instruction(&mut state, 0xF407);
 
             assert_eq!(state.vRegisters[V4 as usize], 42);
         }
@@ -928,14 +924,14 @@ mod tests {
             assert!(!state.isWaitingForKey);
             assert_eq!(state.vRegisters[V1 as usize], 0);
 
-            execution::execute_instruction(&config, &mut state, 0xF10A);
+            execution::execute_instruction(&mut state, 0xF10A);
 
             assert!(state.isWaitingForKey);
             assert_eq!(state.vRegisters[V1 as usize], 0);
 
             keyboard::set_key_pressed(&mut state, 0xA, true);
 
-            execution::execute_instruction(&config, &mut state, 0xF10A);
+            execution::execute_instruction(&mut state, 0xF10A);
 
             assert!(!state.isWaitingForKey);
             assert_eq!(state.vRegisters[V1 as usize], 0xA);
@@ -947,7 +943,7 @@ mod tests {
 
             state.vRegisters[V5 as usize] = 66;
 
-            execution::execute_instruction(&config, &mut state, 0xF515);
+            execution::execute_instruction(&mut state, 0xF515);
 
             assert_eq!(state.delayTimer, 66);
         }
@@ -958,7 +954,7 @@ mod tests {
 
             state.vRegisters[V6 as usize] = 33;
 
-            execution::execute_instruction(&config, &mut state, 0xF618);
+            execution::execute_instruction(&mut state, 0xF618);
 
             assert_eq!(state.soundTimer, 33);
         }
@@ -970,7 +966,7 @@ mod tests {
             state.vRegisters[V9 as usize] = 10;
             state.i = cpu::MinProgramAddress as u16;
 
-            execution::execute_instruction(&config, &mut state, 0xF91E);
+            execution::execute_instruction(&mut state, 0xF91E);
 
             assert_eq!(state.i, cpu::MinProgramAddress as u16 + 10);
         }
@@ -981,13 +977,13 @@ mod tests {
 
             state.vRegisters[V0 as usize] = 9;
 
-            execution::execute_instruction(&config, &mut state, 0xF029);
+            execution::execute_instruction(&mut state, 0xF029);
 
             assert_eq!(state.i, state.fontTableOffsets[9]);
 
             state.vRegisters[V0 as usize] = 0xF;
 
-            execution::execute_instruction(&config, &mut state, 0xF029);
+            execution::execute_instruction(&mut state, 0xF029);
 
             assert_eq!(state.i, state.fontTableOffsets[0xF]);
         }
@@ -999,7 +995,7 @@ mod tests {
             state.i = cpu::MinProgramAddress as u16;
             state.vRegisters[V7 as usize] = 109;
 
-            execution::execute_instruction(&config, &mut state, 0xF733);
+            execution::execute_instruction(&mut state, 0xF733);
 
             assert_eq!(state.memory[state.i as usize + 0], 1);
             assert_eq!(state.memory[state.i as usize + 1], 0);
@@ -1007,7 +1003,7 @@ mod tests {
 
             state.vRegisters[V7 as usize] = 255;
 
-            execution::execute_instruction(&config, &mut state, 0xF733);
+            execution::execute_instruction(&mut state, 0xF733);
 
             assert_eq!(state.memory[state.i as usize + 0], 2);
             assert_eq!(state.memory[state.i as usize + 1], 5);
@@ -1028,7 +1024,7 @@ mod tests {
             state.vRegisters[V1 as usize] = 0x23;
             state.vRegisters[V2 as usize] = 0x00;
 
-            execution::execute_instruction(&config, &mut state, 0xF155);
+            execution::execute_instruction(&mut state, 0xF155);
 
             assert_eq!(state.memory[state.i as usize + 0], 0xE4);
             assert_eq!(state.memory[state.i as usize + 1], 0x23); // FIXME
@@ -1050,7 +1046,7 @@ mod tests {
             state.memory[state.i as usize + 1] = 0x23;
             state.memory[state.i as usize + 2] = 0x00;
 
-            execution::execute_instruction(&config, &mut state, 0xF165);
+            execution::execute_instruction(&mut state, 0xF165);
 
             assert_eq!(state.vRegisters[V0 as usize], 0xE4);
             assert_eq!(state.vRegisters[V1 as usize], 0x23);

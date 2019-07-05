@@ -1,10 +1,6 @@
-pub const VRegisterCount: usize = 16;
-pub const StackSize: usize = 16;
-pub const MemorySizeInBytes: usize = 0x1000;
-
-// Fonts
-const FontTableGlyphCount: usize = 16;
-const GlyphSizeInBytes: usize = 5;
+pub const V_REGISTER_COUNT: usize = 15;
+pub const STACK_SIZE: usize = 16;
+pub const MEMORY_SIZE_IN_BYTES: usize = 0x1000;
 
 // Display
 pub const ScreenWidth: usize = 64;
@@ -21,6 +17,11 @@ pub const InstructionExecutionFrequency: u32 = 500;
 pub const DelayTimerPeriodMs: u32 = 1000 / DelayTimerFrequency;
 pub const InstructionExecutionPeriodMs: u32 = 1000 / InstructionExecutionFrequency;
 
+// Fonts
+const FontTableGlyphCount: usize = 16;
+const GlyphSizeInBytes: usize = 5;
+
+#[allow(dead_code)]
 pub enum VRegisterName
 {
     V0, V1, V2, V3,
@@ -34,8 +35,8 @@ pub struct CPUState
 {
     pub pc: u16,
     pub sp: u8,
-    pub stack: [u16; StackSize],
-    pub vRegisters: [u8; VRegisterCount],
+    pub stack: [u16; STACK_SIZE],
+    pub vRegisters: [u8; V_REGISTER_COUNT],
     pub i: u16,
 
     pub delayTimer: u8,
@@ -103,7 +104,7 @@ pub fn createCPUState() -> CPUState
     state.pc = MinProgramAddress as u16;
 
     // Clear memory
-    state.memory = vec![0; MemorySizeInBytes];
+    state.memory = vec![0; MEMORY_SIZE_IN_BYTES];
 
     // Clear screen
     state.screen = vec![vec![0; ScreenLineSizeInBytes]; ScreenHeight];
