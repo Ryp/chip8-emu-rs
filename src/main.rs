@@ -26,8 +26,6 @@ fn main() {
         chip8::load_program(&mut state, rom_content);
     }
 
-    println!("[DEBUG] state memory: {:x?}", &state.memory[..]);
-
     let config = chip8::EmuConfig {
         debug_mode: true,
         palette: chip8::Palette {
