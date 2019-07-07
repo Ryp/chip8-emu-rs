@@ -75,6 +75,7 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
         .map_err(|e| e.to_string())?;
 
     let mut canvas = window.into_canvas()
+        .present_vsync()
         .build()
         .map_err(|e| e.to_string())?;
 
@@ -138,6 +139,10 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
         canvas.present();
 
         previous_time_ms = current_time_ms;
+
+        if config.debug_mode {
+            println!("Frame time = {} ms", delta_time_ms);
+        }
     }
 
     Ok(())

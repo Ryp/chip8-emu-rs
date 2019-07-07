@@ -32,7 +32,7 @@ fn main() {
             primary: chip8::Color { r: 1.0, g: 1.0, b: 1.0 },
             secondary: chip8::Color { r: 0.14, g: 0.14, b: 0.14 }
         },
-        screen_scale: 8
+        screen_scale: 16
     };
 
     sdl2::execute_main_loop(&mut state, &config).unwrap();
