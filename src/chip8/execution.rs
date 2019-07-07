@@ -35,7 +35,7 @@ pub fn execute_step(state: &mut cpu::CPUState, delta_time_ms: u32)
 
     update_timers(state, &mut instructions_to_execute, delta_time_ms);
 
-    for _i in 0..instructions_to_execute
+    for _ in 0..instructions_to_execute
     {
         // Simulate logic
         let next_instruction: u16 = load_next_instruction(state);

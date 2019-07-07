@@ -365,15 +365,15 @@ pub fn execute_drw(state: &mut CPUState, register_lhs: u8, register_rhs: u8, siz
 
         for pixel_index in 0..8
         {
-            let sprite_pixel_value: u8 = (sprite_row >> (7 - pixel_index)) & 0x1;
+            let sprite_pixel_value = ((sprite_row >> (7 - pixel_index)) & 0x1) != 0;
             let screen_x: usize = (sprite_start_x + pixel_index) % cpu::SCREEN_WIDTH;
 
-            let screen_pixel_value: u8 = display::read_screen_pixel(state, screen_x, screen_y);
+            let screen_pixel_value = display::read_screen_pixel(state, screen_x, screen_y);
 
-            let result: u8 = screen_pixel_value ^ sprite_pixel_value;
+            let result = screen_pixel_value ^ sprite_pixel_value;
 
             // A pixel was erased
-            if screen_pixel_value != 0 && result == 0 {
+            if screen_pixel_value && !result {
                 collision = true;
             }
 

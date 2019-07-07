@@ -1,6 +1,5 @@
 use crate::chip8::cpu;
 use crate::chip8::config;
-use crate::chip8::display;
 use crate::chip8::keyboard;
 use crate::chip8::execution;
 use crate::chip8::cpu::CPUState;
@@ -14,19 +13,15 @@ use sdl2::keyboard::Scancode;
 
 pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Result<(), String>
 {
-    const PIXEL_FORMAT_BGRA_SIZE_IN_BYTES: usize = 4;
-
     let scale = config.screen_scale as usize;
-    let width = cpu::SCREEN_WIDTH * scale;
-    let height = cpu::SCREEN_HEIGHT * scale;
-    let stride = width * PIXEL_FORMAT_BGRA_SIZE_IN_BYTES; // No extra space between lines
-    let pitch = stride;
+    let framebuffer_width = cpu::SCREEN_WIDTH * scale;
+    let framebuffer_height = cpu::SCREEN_HEIGHT * scale;
 
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let mut timer_subsystem = sdl_context.timer()?;
 
-    let window = video_subsystem.window("CHIP-8 Emulator", width as u32, height as u32)
+    let window = video_subsystem.window("CHIP-8 Emulator", framebuffer_width as u32, framebuffer_height as u32)
         .position_centered()
         .build()
         .map_err(|e| e.to_string())?;
@@ -77,17 +72,12 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
 
         execution::execute_step(state, delta_time_ms);
 
-        let framebuffer_width = cpu::SCREEN_WIDTH * scale;
-        let framebuffer_height = cpu::SCREEN_HEIGHT * scale;
-
         // Draw
         let mut texture = texture_creator.create_texture_streaming(PixelFormatEnum::BGRA32, framebuffer_width as u32, framebuffer_height as u32)
             .map_err(|e| e.to_string())?;
 
         // Copy texture data
         texture.with_lock(None, |mapped_buffer: &mut [u8], mapped_buffer_pitch: usize| {
-            assert_eq!(mapped_buffer_pitch, pitch);
-
             let primary_color_bgra: [u8; 4] = [
                 (255.0 * config.palette.primary.b) as u8,
                 (255.0 * config.palette.primary.g) as u8,
@@ -101,18 +91,32 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
                 255
             ];
 
-            for j in 0..cpu::SCREEN_HEIGHT * scale {
-                for i in 0..cpu::SCREEN_WIDTH * scale {
-                    let pixel_index_flat_dst: usize = j * cpu::SCREEN_WIDTH * scale + i;
-                    let pixel_output_offset_in_bytes: usize = pixel_index_flat_dst * PIXEL_FORMAT_BGRA_SIZE_IN_BYTES;
-                    let pixel_value: u8 = display::read_screen_pixel(state, i / scale, j / scale);
-                    let offset = pixel_output_offset_in_bytes;
+            let mut scanlines = mapped_buffer.chunks_mut(mapped_buffer_pitch);
 
-                    if pixel_value != 0 {
-                        mapped_buffer[offset..offset + 4].clone_from_slice(&primary_color_bgra[..]);
-                    } else {
-                        mapped_buffer[offset..offset + 4].clone_from_slice(&secondary_color_bgra[..]);
+            // Convert and upscale screen image
+            for j in 0..cpu::SCREEN_HEIGHT {
+                let current_scanline_slice = scanlines.next().unwrap();
+                let mut scanline_pixels = current_scanline_slice.chunks_mut(4);
+
+                for i in 0..cpu::SCREEN_LINE_SIZE_IN_BYTES {
+                    let pixel_byte: u8 = state.screen[j][i];
+
+                    for k in 0..8 {
+                        let pixel_state = ((pixel_byte >> k) & 0x1) != 0;
+                        let color_slice = if pixel_state { &primary_color_bgra[..] } else { &secondary_color_bgra[..] };
+
+                        // Copy to upscale
+                        for _ in 0..scale {
+                            let dst_pixel = scanline_pixels.next().unwrap();
+                            dst_pixel[..].clone_from_slice(color_slice);
+                        }
                     }
+                }
+
+                // Copy scanlines
+                for _ in 1..scale {
+                    let dst_slice = scanlines.next().unwrap();
+                    dst_slice[..].clone_from_slice(&current_scanline_slice[..]);
                 }
             }
         })?;
