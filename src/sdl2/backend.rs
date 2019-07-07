@@ -5,51 +5,8 @@ use crate::chip8::keyboard;
 use crate::chip8::execution;
 use crate::chip8::cpu::CPUState;
 
-const PIXEL_FORMAT_BGRA_SIZE_IN_BYTES: usize = 4;
-
-fn fill_image_buffer(image_output: &mut Vec<u8>, state: &CPUState, palette: &config::Palette, scale: u32)
-{
-    let primary_color_bgra: [u8; 4] = [
-        (255.0 * palette.primary.b) as u8,
-        (255.0 * palette.primary.g) as u8,
-        (255.0 * palette.primary.r) as u8,
-        255
-    ];
-    let secondary_color_bgra: [u8; 4] = [
-        (255.0 * palette.secondary.b) as u8,
-        (255.0 * palette.secondary.g) as u8,
-        (255.0 * palette.secondary.r) as u8,
-        255
-    ];
-    let scale = scale as usize;
-
-    for j in 0..cpu::SCREEN_HEIGHT * scale {
-        for i in 0..cpu::SCREEN_WIDTH * scale {
-            let pixel_index_flat_dst: usize = j * cpu::SCREEN_WIDTH * scale + i;
-            let pixel_output_offset_in_bytes: usize = pixel_index_flat_dst * PIXEL_FORMAT_BGRA_SIZE_IN_BYTES;
-            let pixel_value: u8 = display::read_screen_pixel(state, i / scale, j / scale);
-
-            if pixel_value != 0
-            {
-                image_output[pixel_output_offset_in_bytes + 0] = primary_color_bgra[0];
-                image_output[pixel_output_offset_in_bytes + 1] = primary_color_bgra[1];
-                image_output[pixel_output_offset_in_bytes + 2] = primary_color_bgra[2];
-                image_output[pixel_output_offset_in_bytes + 3] = primary_color_bgra[3];
-            }
-            else
-            {
-                image_output[pixel_output_offset_in_bytes + 0] = secondary_color_bgra[0];
-                image_output[pixel_output_offset_in_bytes + 1] = secondary_color_bgra[1];
-                image_output[pixel_output_offset_in_bytes + 2] = secondary_color_bgra[2];
-                image_output[pixel_output_offset_in_bytes + 3] = secondary_color_bgra[3];
-            }
-        }
-    }
-}
-
 extern crate sdl2;
 
-//use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -57,13 +14,13 @@ use sdl2::keyboard::Scancode;
 
 pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Result<(), String>
 {
+    const PIXEL_FORMAT_BGRA_SIZE_IN_BYTES: usize = 4;
+
     let scale = config.screen_scale as usize;
     let width = cpu::SCREEN_WIDTH * scale;
     let height = cpu::SCREEN_HEIGHT * scale;
     let stride = width * PIXEL_FORMAT_BGRA_SIZE_IN_BYTES; // No extra space between lines
-    let size = stride * cpu::SCREEN_HEIGHT * scale;
     let pitch = stride;
-    let mut image = vec![0 as u8; size];
 
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
@@ -120,8 +77,6 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
 
         execution::execute_step(state, delta_time_ms);
 
-        fill_image_buffer(&mut image, state, &config.palette, scale as u32);
-
         let framebuffer_width = cpu::SCREEN_WIDTH * scale;
         let framebuffer_height = cpu::SCREEN_HEIGHT * scale;
 
@@ -132,7 +87,34 @@ pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Re
         // Copy texture data
         texture.with_lock(None, |mapped_buffer: &mut [u8], mapped_buffer_pitch: usize| {
             assert_eq!(mapped_buffer_pitch, pitch);
-            mapped_buffer.clone_from_slice(&image[..]);
+
+            let primary_color_bgra: [u8; 4] = [
+                (255.0 * config.palette.primary.b) as u8,
+                (255.0 * config.palette.primary.g) as u8,
+                (255.0 * config.palette.primary.r) as u8,
+                255
+            ];
+            let secondary_color_bgra: [u8; 4] = [
+                (255.0 * config.palette.secondary.b) as u8,
+                (255.0 * config.palette.secondary.g) as u8,
+                (255.0 * config.palette.secondary.r) as u8,
+                255
+            ];
+
+            for j in 0..cpu::SCREEN_HEIGHT * scale {
+                for i in 0..cpu::SCREEN_WIDTH * scale {
+                    let pixel_index_flat_dst: usize = j * cpu::SCREEN_WIDTH * scale + i;
+                    let pixel_output_offset_in_bytes: usize = pixel_index_flat_dst * PIXEL_FORMAT_BGRA_SIZE_IN_BYTES;
+                    let pixel_value: u8 = display::read_screen_pixel(state, i / scale, j / scale);
+                    let offset = pixel_output_offset_in_bytes;
+
+                    if pixel_value != 0 {
+                        mapped_buffer[offset..offset + 4].clone_from_slice(&primary_color_bgra[..]);
+                    } else {
+                        mapped_buffer[offset..offset + 4].clone_from_slice(&secondary_color_bgra[..]);
+                    }
+                }
+            }
         })?;
 
         canvas.copy(&texture, None, None)?;
