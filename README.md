@@ -6,7 +6,9 @@ This is a Rust re-write of my existing C++ [CHIP-8 Emu](https://github.com/Ryp/c
 
 This should get you going after cloning the repo:
 ```sh
-$ cargo run -- <rom_file>
+$ cargo run --release -- <rom_file>
 ```
+
+**Disclaimer** Debug perf is absolutely horrible. Use release if you're not digging into the code.
 
 **Disclaimer:** I didn't spend too much effort making this portable/packaged at all.
