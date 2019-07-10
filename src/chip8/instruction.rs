@@ -1066,10 +1066,10 @@ mod tests {
             state.v_registers[V1 as usize] = 0x23;
             state.v_registers[V2 as usize] = 0x00;
 
-            execution::execute_instruction(&mut state, 0xF155);
+            execute_instruction_internal(&mut state, OpCode::LDAI{reg: V1 as u8});
 
             assert_eq!(state.memory[state.i as usize + 0], 0xE4);
-            assert_eq!(state.memory[state.i as usize + 1], 0x23); // FIXME
+            assert_eq!(state.memory[state.i as usize + 1], 0x23);
             assert_eq!(state.memory[state.i as usize + 2], 0x82);
             assert_eq!(state.memory[state.i as usize + 3], 0x73);
         }
@@ -1088,7 +1088,7 @@ mod tests {
             state.memory[state.i as usize + 1] = 0x23;
             state.memory[state.i as usize + 2] = 0x00;
 
-            execution::execute_instruction(&mut state, 0xF165);
+            execute_instruction_internal(&mut state, OpCode::LDM{reg: V1 as u8});
 
             assert_eq!(state.v_registers[V0 as usize], 0xE4);
             assert_eq!(state.v_registers[V1 as usize], 0x23);
