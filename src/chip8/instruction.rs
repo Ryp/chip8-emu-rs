@@ -190,7 +190,7 @@ pub fn execute_xor(state: &mut CPUState, register_lhs: u8, register_rhs: u8)
     let register_lhs = register_lhs as usize;
     let register_rhs = register_rhs as usize;
 
-    state.v_registers[register_lhs] = state.v_registers[register_lhs] ^ state.v_registers[register_rhs];
+    state.v_registers[register_lhs] ^= state.v_registers[register_rhs];
 }
 
 // Set Vx = Vx + Vy, set VF = carry.
@@ -312,7 +312,7 @@ pub fn execute_ldi(state: &mut CPUState, address: u16)
 // The program counter is set to nnn plus the value of V0.
 pub fn execute_jp2(state: &mut CPUState, base_address: u16)
 {
-    let offset: u16 = state.v_registers[V0 as usize] as u16;
+    let offset = u16::from(state.v_registers[V0 as usize]);
     let jump_address: u16 = base_address + offset;
 
     assert!((jump_address & 0x0001) == 0); // Unaligned address
@@ -359,7 +359,7 @@ pub fn execute_drw(state: &mut CPUState, register_lhs: u8, register_rhs: u8, siz
     // Sprites are made of rows of 1 byte each.
     for row_index in 0..size
     {
-        let sprite_address = (state.i + row_index as u16) as usize;
+        let sprite_address = (state.i + u16::from(row_index)) as usize;
         let sprite_row: u8 = state.memory[sprite_address];
         let screen_y = (sprite_start_y + row_index as usize) % cpu::SCREEN_HEIGHT;
 
@@ -468,7 +468,7 @@ pub fn execute_addi(state: &mut CPUState, register_name: u8)
 {
     assert!((register_name & !0x0F) == 0); // Invalid register
 
-    let register_value: u16 = state.v_registers[register_name as usize] as u16;
+    let register_value = u16::from(state.v_registers[register_name as usize]);
     let i_value: u16 = state.i;
     let sum: u16 = i_value + register_value;
 
@@ -502,7 +502,7 @@ pub fn execute_ldb(state: &mut CPUState, register_name: u8)
     let register_value: u8 = state.v_registers[register_name as usize];
 
     let ip = state.i as usize;
-    state.memory[ip + 0] = (register_value / 100) % 10;
+    state.memory[ip]     = (register_value / 100) % 10;
     state.memory[ip + 1] = (register_value / 10) % 10;
     state.memory[ip + 2] = (register_value) % 10;
 }
@@ -517,7 +517,7 @@ pub fn execute_ldai(state: &mut CPUState, register_name: u8)
     assert!((register_index_max & !0x0F) == 0); // Invalid register
     assert!(memory::is_valid_memory_range(state.i, register_index_max + 1, MemoryUsage::Write));
 
-    for index in 0..register_index_max+1 {
+    for index in 0..=register_index_max {
         state.memory[state.i as usize + index] = state.v_registers[index];
     }
 }
@@ -531,7 +531,7 @@ pub fn execute_ldm(state: &mut CPUState, register_name: u8)
     assert!((register_index_max & !0x0F) == 0); // Invalid register
     assert!(memory::is_valid_memory_range(state.i, register_index_max + 1, MemoryUsage::Read));
 
-    for index in 0..register_index_max+1 {
+    for index in 0..=register_index_max {
         state.v_registers[index] = state.memory[state.i as usize + index];
     }
 }

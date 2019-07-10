@@ -20,8 +20,8 @@ pub fn load_program(state: &mut cpu::CPUState, program: Vec<u8>)
 pub fn load_next_instruction(state: &cpu::CPUState) -> u16
 {
     let pc = state.pc as usize;
-    let byte0 = state.memory[pc + 0] as u32;
-    let byte1 = state.memory[pc + 1] as u32;
+    let byte0 = u32::from(state.memory[pc]);
+    let byte1 = u32::from(state.memory[pc + 1]);
 
     // Load big endian
     let instruction = byte0 << 8 | byte1;
@@ -49,16 +49,16 @@ fn update_timers(state: &mut cpu::CPUState, execution_counter: &mut u32, delta_t
     state.delay_timer_accumulator += delta_time_ms;
 
     let delay_timer_decrement: u32 = state.delay_timer_accumulator / cpu::DELAY_TIMER_PERIOD_MS;
-    state.delay_timer = max(0, state.delay_timer as i32 - delay_timer_decrement as i32) as u8; // TODO maybe there's a cast error here
+    state.delay_timer = max(0, i32::from(state.delay_timer) - delay_timer_decrement as i32) as u8; // TODO maybe there's a cast error here
 
     // Remove accumulated ticks
-    state.delay_timer_accumulator = state.delay_timer_accumulator % cpu::DELAY_TIMER_PERIOD_MS;
+    state.delay_timer_accumulator %= cpu::DELAY_TIMER_PERIOD_MS;
 
     // Update execution counter
     state.execution_timer_accumulator += delta_time_ms;
 
     *execution_counter = state.execution_timer_accumulator / cpu::INSTRUCTION_EXECUTION_PERIOD_MS;
-    state.execution_timer_accumulator = state.execution_timer_accumulator % cpu::INSTRUCTION_EXECUTION_PERIOD_MS;
+    state.execution_timer_accumulator %= cpu::INSTRUCTION_EXECUTION_PERIOD_MS;
 
     // TODO Handle sound
     if state.sound_timer > 0 {
@@ -295,10 +295,8 @@ pub fn execute_instruction(state: &mut cpu::CPUState, instruction: u16)
         let register_name = ((instruction & 0x0F00) >> 8) as u8;
 
         execute_ldm(state, register_name);
-    }
-    else
-    {
-        assert!(false); // Unknown instruction
+    } else {
+        unreachable!(); // Unknown instruction
     }
 
     // Increment PC only if it was NOT overriden by an instruction,

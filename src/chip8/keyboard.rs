@@ -13,7 +13,7 @@ pub fn is_key_pressed(state: &CPUState, key: KeyID) -> bool
 {
     assert!(key < KEY_ID_COUNT); // Invalid key
 
-    return (state.key_state & (1 << key)) != 0;
+    (state.key_state & (1 << key)) != 0
 }
 
 // If multiple keys are pressed at the same time, only register one.
@@ -27,8 +27,7 @@ pub fn get_key_pressed(key_state: u16) -> KeyID
         }
     }
 
-    assert!(false);
-    return 0x0;
+    unreachable!();
 }
 
 pub fn set_key_pressed(state: &mut CPUState, key: KeyID, pressed_state: bool)
