@@ -40,7 +40,7 @@ pub fn execute_step(state: &mut cpu::CPUState, delta_time_ms: u32)
     for _ in 0..instructions_to_execute
     {
         // Simulate logic
-        let next_instruction: u16 = load_next_instruction(state);
+        let next_instruction = load_next_instruction(state);
         execute_instruction(state, next_instruction);
     }
 }
@@ -73,7 +73,20 @@ pub fn execute_instruction(state: &mut cpu::CPUState, instruction: u16)
     // Save PC for later
     let pc_save = state.pc;
 
-    // Decode and execute
+    decode_and_execute_instruction(state, instruction);
+
+    // Increment PC only if it was NOT overriden by an instruction,
+    // or if we are waiting for user input.
+    if pc_save == state.pc && !state.is_waiting_for_key {
+        state.pc += 2;
+    }
+
+    // Save previous key state
+    state.key_state_prev = state.key_state;
+}
+
+fn decode_and_execute_instruction(state: &mut cpu::CPUState, instruction: u16)
+{
     if instruction == 0x00E0 {
         // 00E0 - CLS
         execute_cls(state);
@@ -300,13 +313,4 @@ pub fn execute_instruction(state: &mut cpu::CPUState, instruction: u16)
     } else {
         unreachable!(); // Unknown instruction
     }
-
-    // Increment PC only if it was NOT overriden by an instruction,
-    // or if we are waiting for user input.
-    if pc_save == state.pc && !state.is_waiting_for_key {
-        state.pc += 2;
-    }
-
-    // Save previous key state
-    state.key_state_prev = state.key_state;
 }
