@@ -1,7 +1,3 @@
-use std::io::prelude::*;
-use std::fs::File;
-use std::path::Path;
-
 mod chip8;
 mod sdl2;
 
@@ -38,10 +34,7 @@ fn main() {
 
     let mut state: chip8::CPUState = chip8::create_chip8_state();
 
-    // Load program in emu memory
-    let mut rom_file = File::open(&Path::new(&rom_path)).expect("Could not open file");
-    let mut rom_content = Vec::<u8>::new();
-    rom_file.read_to_end(&mut rom_content).expect("Unable to read the file");
+    let rom_content = std::fs::read(&rom_path).expect("Unable to read file");
 
     chip8::load_program(&mut state, rom_content);
 
