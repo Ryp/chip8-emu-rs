@@ -1,10 +1,12 @@
-use super::cpu;
-use super::cpu::CPUState;
-use super::cpu::VRegisterName::*;
-use super::memory;
-use super::memory::MemoryUsage;
-use super::display;
-use super::keyboard;
+use super::{
+    cpu,
+    cpu::CPUState,
+    cpu::VRegisterName::*,
+    memory,
+    memory::MemoryUsage,
+    display,
+    keyboard,
+};
 
 use rand::prelude::*;
 

@@ -1,6 +1,8 @@
-use super::cpu;
-use super::memory;
-use super::instruction::*;
+use super::{
+    cpu,
+    memory,
+    instruction::*,
+};
 
 use std::cmp::max;
 

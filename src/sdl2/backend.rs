@@ -1,15 +1,18 @@
-use crate::chip8::cpu;
-use crate::chip8::config;
-use crate::chip8::keyboard;
-use crate::chip8::execution;
-use crate::chip8::cpu::CPUState;
+use crate::chip8::{
+    cpu,
+    cpu::CPUState,
+    config,
+    keyboard,
+    execution,
+};
 
 extern crate sdl2;
 
-use sdl2::pixels::PixelFormatEnum;
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
-use sdl2::keyboard::Scancode;
+use sdl2::{
+    pixels::PixelFormatEnum,
+    event::Event,
+    keyboard::{Keycode, Scancode},
+};
 
 pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Result<(), String>
 {

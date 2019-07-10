@@ -4,12 +4,12 @@ pub mod execution;
 pub mod display;
 pub mod keyboard;
 
-pub use self::config::*;
-pub use self::cpu::*;
-pub use self::execution::*;
-pub use self::display::*;
+pub use self::{
+    config::*,
+    cpu::*,
+    execution::*,
+    display::*
+};
 
 mod instruction;
 mod memory;
-
-//use VRegisterName::*;
