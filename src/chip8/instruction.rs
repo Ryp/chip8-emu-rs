@@ -2,13 +2,55 @@ use super::{
     cpu,
     cpu::CPUState,
     cpu::VRegisterName::*,
-    memory,
-    memory::MemoryUsage,
     display,
     keyboard,
+    memory,
+    memory::MemoryUsage,
+    opcode::OpCode,
 };
 
 use rand::prelude::*;
+
+pub fn execute_instruction_internal(state: &mut cpu::CPUState, instruction: OpCode)
+{
+    match instruction {
+        OpCode::CLS => execute_cls(state),
+        OpCode::RET => execute_ret(state),
+        OpCode::SYS{addr} => execute_sys(state, addr),
+        OpCode::JP{addr} => execute_jp(state, addr),
+        OpCode::CALL{addr} => execute_call(state, addr),
+        OpCode::SE{reg, value} => execute_se(state, reg, value),
+        OpCode::SNE{reg, value} => execute_sne(state, reg, value),
+        OpCode::SE2{reg_x, reg_y} => execute_se2(state, reg_x, reg_y),
+        OpCode::LD{reg, value} => execute_ld(state, reg, value),
+        OpCode::ADD{reg, value} => execute_add(state, reg, value),
+        OpCode::LD2{reg_x, reg_y} => execute_ld2(state, reg_x, reg_y),
+        OpCode::OR{reg_x, reg_y} => execute_or(state, reg_x, reg_y),
+        OpCode::AND{reg_x, reg_y} => execute_and(state, reg_x, reg_y),
+        OpCode::ADD2{reg_x, reg_y} => execute_add2(state, reg_x, reg_y),
+        OpCode::SUB{reg_x, reg_y} => execute_sub(state, reg_x, reg_y),
+        OpCode::XOR{reg_x, reg_y} => execute_xor(state, reg_x, reg_y),
+        OpCode::SHR{reg_x, reg_y} => execute_shr(state, reg_x, reg_y),
+        OpCode::SUBN{reg_x, reg_y} => execute_subn(state, reg_x, reg_y),
+        OpCode::SHL{reg_x, reg_y} => execute_shl(state, reg_x, reg_y),
+        OpCode::SNE2{reg_x, reg_y} => execute_sne2(state, reg_x, reg_y),
+        OpCode::LDI{addr} => execute_ldi(state, addr),
+        OpCode::JP2{addr} => execute_jp2(state, addr),
+        OpCode::DRW{reg_x, reg_y, size} => execute_drw(state, reg_x, reg_y, size),
+        OpCode::RND{reg, value} => execute_rnd(state, reg, value),
+        OpCode::SKP{reg} => execute_skp(state, reg),
+        OpCode::SKNP{reg} => execute_sknp(state, reg),
+        OpCode::LDT{reg} => execute_ldt(state, reg),
+        OpCode::LDK{reg} => execute_ldk(state, reg),
+        OpCode::LDDT{reg} => execute_lddt(state, reg),
+        OpCode::LDST{reg} => execute_ldst(state, reg),
+        OpCode::ADDI{reg} => execute_addi(state, reg),
+        OpCode::LDF{reg} => execute_ldf(state, reg),
+        OpCode::LDB{reg} => execute_ldb(state, reg),
+        OpCode::LDAI{reg} => execute_ldai(state, reg),
+        OpCode::LDM{reg} => execute_ldm(state, reg),
+    }
+}
 
 // Clear the display.
 pub fn execute_cls(state: &mut CPUState)
@@ -238,7 +280,7 @@ pub fn execute_sub(state: &mut CPUState, register_lhs: u8, register_rhs: u8)
 // If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
 // Then Vx is divided by 2.
 // NOTE: register_rhs is just ignored apparently.
-pub fn execute_shr1(state: &mut CPUState, register_lhs: u8, _register_rhs: u8)
+pub fn execute_shr(state: &mut CPUState, register_lhs: u8, _register_rhs: u8)
 {
     assert!((register_lhs & !0x0F) == 0); // Invalid register
 
@@ -272,7 +314,7 @@ pub fn execute_subn(state: &mut CPUState, register_lhs: u8, register_rhs: u8)
 // Set Vx = Vx SHL 1.
 // If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is multiplied by 2.
 // NOTE: register_rhs is just ignored apparently.
-pub fn execute_shl1(state: &mut CPUState, register_lhs: u8, _register_rhs: u8)
+pub fn execute_shl(state: &mut CPUState, register_lhs: u8, _register_rhs: u8)
 {
     assert!((register_lhs & !0x0F) == 0); // Invalid register
 

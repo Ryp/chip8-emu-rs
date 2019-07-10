@@ -1,17 +1,17 @@
 use crate::chip8::{
+    config,
     cpu,
     cpu::CPUState,
-    config,
-    keyboard,
     execution,
+    keyboard,
 };
 
 extern crate sdl2;
 
 use sdl2::{
-    pixels::PixelFormatEnum,
     event::Event,
     keyboard::{Keycode, Scancode},
+    pixels::PixelFormatEnum,
 };
 
 pub fn execute_main_loop(state: &mut CPUState, config: &config::EmuConfig) -> Result<(), String>
